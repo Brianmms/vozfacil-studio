@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Loader2, Sparkles, X } from 'lucide-react';
 import type { Project } from '../types';
 import { prepareScriptApi } from '../lib/api';
-import { applyPlaceholders } from '../lib/scriptParser';
+import { applyPlaceholderValues, extractPlaceholders } from '../lib/scriptParser';
 
 interface NewScriptModalProps {
   onClose: () => void;
@@ -12,11 +12,11 @@ interface NewScriptModalProps {
 export const NewScriptModal: React.FC<NewScriptModalProps> = ({ onClose, onCreated }) => {
   const [title, setTitle] = useState('');
   const [rawText, setRawText] = useState('');
-  const [name, setName] = useState('');
-  const [age, setAge] = useState('');
-  const [grade, setGrade] = useState('');
+  const [values, setValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const placeholderTokens = useMemo(() => extractPlaceholders(rawText), [rawText]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,12 +25,20 @@ export const NewScriptModal: React.FC<NewScriptModalProps> = ({ onClose, onCreat
       return;
     }
 
+    const missing = placeholderTokens.filter(
+      (token) => !((values[token.key] || '').trim() || token.defaultValue)
+    );
+    if (missing.length > 0) {
+      setError(`Completa estos datos: ${missing.map((token) => token.label).join(', ')}`);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
       const res = await prepareScriptApi({
         title: title.trim() || 'Mi nuevo guion en inglés',
-        rawText: applyPlaceholders(rawText.trim(), { name, age, grade }),
+        rawText: applyPlaceholderValues(rawText.trim(), values),
         save: true,
       });
       onCreated(res.project, res.usedAI);
@@ -57,8 +65,8 @@ export const NewScriptModal: React.FC<NewScriptModalProps> = ({ onClose, onCreat
               Nuevo texto para practicar por partes
             </h3>
             <p className="text-xs text-slate-500 mt-1">
-              Pega cualquier texto en inglés. Si incluye notas entre paréntesis como{' '}
-              <code>(Pausa breve)</code>, la app las separará como recordatorios de pausa y tono.
+              Pega cualquier texto en inglés. Los <code>(...)</code> son pausas/tono y cada{' '}
+              <code>[...]</code> (nombre, comida, lugar…) se convierte en un campo para completar.
             </p>
           </div>
           <button
@@ -96,35 +104,31 @@ export const NewScriptModal: React.FC<NewScriptModalProps> = ({ onClose, onCreat
             />
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 space-y-2">
-            <p className="text-[11px] font-bold text-slate-600">
-              Personalizar (opcional) — rellena <code>[tu nombre]</code>,{' '}
-              <code>[tu edad]</code> y <code>[tu grado]</code>
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Nombre (Sara)"
-                className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
-              />
-              <input
-                type="text"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                placeholder="Edad (15)"
-                className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
-              />
-              <input
-                type="text"
-                value={grade}
-                onChange={(e) => setGrade(e.target.value)}
-                placeholder="Grado (9)"
-                className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
-              />
+          {placeholderTokens.length > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 space-y-2">
+              <p className="text-[11px] font-bold text-slate-600">
+                Completa los datos de tu guion (se detectaron {placeholderTokens.length}):
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {placeholderTokens.map((token) => (
+                  <label key={token.key} className="block">
+                    <span className="block text-[11px] font-semibold text-slate-500 mb-0.5">
+                      {token.label}
+                    </span>
+                    <input
+                      type="text"
+                      value={values[token.key] ?? ''}
+                      onChange={(e) =>
+                        setValues((prev) => ({ ...prev, [token.key]: e.target.value }))
+                      }
+                      placeholder={token.defaultValue || token.label}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
+                    />
+                  </label>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {error && (
             <div className="rounded-xl bg-rose-50 border border-rose-200 px-3.5 py-2.5 text-xs text-rose-800">

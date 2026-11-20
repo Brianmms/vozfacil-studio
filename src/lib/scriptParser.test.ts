@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseScriptText, applyPlaceholders, cleanExpectedText } from './scriptParser.ts';
+import {
+  parseScriptText,
+  applyPlaceholders,
+  applyPlaceholderValues,
+  extractPlaceholders,
+  cleanExpectedText,
+} from './scriptParser.ts';
 
 test('detecta roles de diálogo y los separa del texto', () => {
   const segs = parseScriptText(
@@ -59,4 +65,20 @@ test('texto narrativo sin roles se conserva', () => {
 test('cleanExpectedText deja solo el inglés (sin roles, pasos ni español)', () => {
   const raw = '[Paso 1: Enter]\nTú (Cliente): "Hello, table?"\nTú (Mesero): "Sure!"';
   assert.equal(cleanExpectedText(raw), 'Hello, table? Sure!');
+});
+
+test('extrae placeholders dinámicos y excluye pasos', () => {
+  const raw = '[Paso 1: Enter]\nHello [tu nombre], I want [food] in [places].';
+  const tokens = extractPlaceholders(raw);
+  assert.deepEqual(
+    tokens.map((token) => token.key),
+    ['tu nombre', 'food', 'places']
+  );
+});
+
+test('aplica valores dinámicos y deja los pasos intactos', () => {
+  const raw = '[Paso 1: Enter]\nHello [tu nombre], I want [food].';
+  const out = applyPlaceholderValues(raw, { 'tu nombre': 'Sara', food: 'pizza' });
+  assert.match(out, /\[Paso 1: Enter\]/);
+  assert.match(out, /Hello Sara, I want pizza\./);
 });

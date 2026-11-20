@@ -57,24 +57,87 @@ function cleanRole(raw: string): string {
     .trim();
 }
 
-/**
- * Replaces bracket placeholders like [tu nombre], [tu edad], [tu grado, por ejemplo: 9th]
- * and inline example placeholders like [tu plato, por ejemplo: a burger] -> "a burger".
- */
-export function applyPlaceholders(text: string, profile: PlaceholderProfile = {}): string {
-  const name = (profile.name || '').trim();
-  const age = (profile.age || '').trim();
-  const grade = (profile.grade || '').trim();
-
-  let out = String(text || '');
-  out = out.replace(/\[\s*tu\s+nombre[^\]]*\]/gi, name || 'Sara');
-  out = out.replace(/\[\s*tu\s+edad[^\]]*\]/gi, age || '15');
-  out = out.replace(/\[\s*tu\s+grado[^\]]*\]/gi, grade || '9');
-  out = out.replace(
-    /\[[^\]]*?por\s+ejemplo\s*:\s*([^\]]+)\]/gi,
-    (_match, example: string) => String(example).trim()
+function isStepBracket(inner: string): boolean {
+  return /^\s*(paso|step|escena|scene|parte|part|closing|intro|introducci[oó]n|introduction|final|cierre)\b/i.test(
+    inner
   );
-  return out;
+}
+
+function normalizePlaceholderKey(inner: string): string {
+  return inner
+    .replace(/[,;]?\s*por\s+ejemplo\s*:.*$/i, '')
+    .trim()
+    .toLowerCase();
+}
+
+export interface PlaceholderToken {
+  key: string;
+  label: string;
+  defaultValue: string;
+}
+
+/**
+ * Finds every inline [placeholder] in the text (e.g. [tu nombre], [food],
+ * [places]) and returns one field per unique placeholder. Whole-line step
+ * headings like [Paso 1: ...] are not treated as placeholders.
+ */
+export function extractPlaceholders(rawText: string): PlaceholderToken[] {
+  const lines = String(rawText || '').replace(/\r\n?/g, '\n').split('\n');
+  const seen = new Set<string>();
+  const tokens: PlaceholderToken[] = [];
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    const wholeLine = line.match(/^\[(.+)\]$/);
+    if (wholeLine && isStepBracket(wholeLine[1])) continue;
+
+    for (const match of line.matchAll(/\[([^\]]+)\]/g)) {
+      const inner = match[1].trim();
+      if (!inner || isStepBracket(inner)) continue;
+      const key = normalizePlaceholderKey(inner);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      const exampleMatch = inner.match(/por\s+ejemplo\s*:\s*(.+)$/i);
+      tokens.push({
+        key,
+        label: inner.replace(/[,;]?\s*por\s+ejemplo\s*:.*$/i, '').trim() || key,
+        defaultValue: exampleMatch ? exampleMatch[1].trim() : '',
+      });
+    }
+  }
+
+  return tokens;
+}
+
+/**
+ * Replaces each inline [placeholder] with the matching value. Falls back to
+ * the "por ejemplo: X" example, and leaves step headings untouched.
+ */
+export function applyPlaceholderValues(
+  text: string,
+  values: Record<string, string>
+): string {
+  return String(text || '').replace(/\[([^\]]+)\]/g, (full, innerRaw: string) => {
+    const inner = String(innerRaw).trim();
+    if (!inner || isStepBracket(inner)) return full;
+    const key = normalizePlaceholderKey(inner);
+    const provided = String(values[key] ?? '').trim();
+    if (provided) return provided;
+    const exampleMatch = inner.match(/por\s+ejemplo\s*:\s*(.+)$/i);
+    if (exampleMatch) return exampleMatch[1].trim();
+    return full;
+  });
+}
+
+/** Backward-compatible helper for the classic name/age/grade profile. */
+export function applyPlaceholders(text: string, profile: PlaceholderProfile = {}): string {
+  const values: Record<string, string> = {};
+  if (profile.name) values['tu nombre'] = profile.name;
+  if (profile.age) values['tu edad'] = profile.age;
+  if (profile.grade) values['tu grado'] = profile.grade;
+  return applyPlaceholderValues(text, values);
 }
 
 /**
