@@ -72,6 +72,8 @@ function segmentToClip(seg: ScriptSegment, take: Take): StudioClip {
     id: `clip-${seg.id}`,
     sourceSegmentId: seg.id,
     title: seg.title,
+    text: seg.text,
+    speaker: seg.speaker,
     cueAfter: seg.cueAfter,
     audioUrl: take.audioUrl,
     filename: take.filename,
@@ -861,6 +863,13 @@ export const StudioView: React.FC<StudioViewProps> = ({
     return hit?.title || 'Pausa entre partes...';
   }, [stitched, isPlayingMaster, masterPlayhead]);
 
+  const activeMasterOffsetIdx = useMemo(() => {
+    if (!stitched) return -1;
+    return stitched.timelineOffsets.findIndex(
+      (t) => masterPlayhead >= t.startSec && masterPlayhead <= t.endSec
+    );
+  }, [stitched, masterPlayhead]);
+
   return (
     <div className="space-y-6">
       {/* Studio Top Toolbar */}
@@ -1221,6 +1230,8 @@ export const StudioView: React.FC<StudioViewProps> = ({
           </div>
         </div>
 
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 space-y-4">
         {/* Master waveform if rendered */}
         {stitched && (
           <div className="space-y-1.5">
@@ -1299,6 +1310,34 @@ export const StudioView: React.FC<StudioViewProps> = ({
               </>
             )}
           </button>
+        </div>
+        </div>
+        {stitched && (
+          <div className="lg:col-span-1 rounded-xl bg-white/5 border border-white/10 p-3 space-y-2 max-h-72 overflow-y-auto">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-indigo-200">
+              Texto sincronizado
+            </div>
+            {stitched.timelineOffsets.map((off, idx) => {
+              const clip = clips.find((c) => c.id === off.clipId);
+              const active = idx === activeMasterOffsetIdx;
+              return (
+                <button
+                  key={off.clipId}
+                  onClick={() => handlePlayOrPauseMaster(off.startSec)}
+                  className={`block w-full text-left rounded-lg px-2.5 py-1.5 text-xs transition cursor-pointer ${
+                    active ? 'bg-indigo-500/30 text-white' : 'text-slate-300 hover:bg-white/5'
+                  }`}
+                >
+                  <span className="font-bold">{off.title}</span>
+                  {clip?.speaker ? (
+                    <span className="ml-1 text-indigo-300">· {clip.speaker}</span>
+                  ) : null}
+                  <span className="block mt-0.5 opacity-90 leading-snug">{clip?.text || ''}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
         </div>
       </div>
 

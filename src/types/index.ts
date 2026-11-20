@@ -54,6 +54,7 @@ export interface ScriptSegment {
   id: string;
   order: number;
   title: string;
+  speaker?: string;
   text: string;
   cueBefore?: string;
   cueAfter?: string;
@@ -84,6 +85,8 @@ export interface StudioClip {
   id: string;
   sourceSegmentId?: string;
   title: string;
+  text?: string;
+  speaker?: string;
   cueAfter?: string;
   audioUrl: string;
   filename?: string;

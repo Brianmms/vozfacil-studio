@@ -621,6 +621,32 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
     }
   }
 
+  async function handleFinishAndNew() {
+    if (activeProject.id === 'sofia-birthday-v1') {
+      if (
+        !window.confirm(
+          '¿Reiniciar el guion de Sofía y empezar uno nuevo? Se borrarán sus tomas grabadas.'
+        )
+      ) {
+        return;
+      }
+      const reset = await resetProjectApi('sofia-birthday-v1');
+      await onUpdateProject(reset);
+    } else {
+      if (
+        !window.confirm(
+          `¿Terminar "${activeProject.title}"? Se borrarán el guion y sus audios para empezar uno nuevo.`
+        )
+      ) {
+        return;
+      }
+      await deleteProjectApi(activeProject.id);
+      onRemoveProject(activeProject.id);
+    }
+    setActiveSegmentIdx(0);
+    setShowNewModal(true);
+  }
+
   function getBestScore(seg: ScriptSegment): number | null {
     const scores = seg.takes
       .map((t) => t.evaluation?.score)
@@ -704,6 +730,14 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
               )}
             </button>
           </div>
+
+          <button
+            onClick={handleFinishAndNew}
+            className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100 cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Terminar y crear nuevo guion
+          </button>
         </div>
 
         {/* Parts list */}
@@ -808,6 +842,11 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                           ? 'Sin grabaciones'
                           : `${seg.takes.length} toma${seg.takes.length > 1 ? 's' : ''}`}
                       </span>
+                      {seg.speaker && (
+                        <span className="rounded bg-indigo-100 text-indigo-800 px-1.5 py-0.5 font-bold">
+                          {seg.speaker}
+                        </span>
+                      )}
                       {(seg.cueBefore || seg.cueAfter) && (
                         <span className="rounded bg-amber-50 text-amber-800 px-1.5 py-0.5 font-medium">
                           {seg.cueBefore || seg.cueAfter}
@@ -834,7 +873,12 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                   <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
                     Parte {safeIdx + 1} de {segments.length}
                   </span>
-                  <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">
+                  <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                    {segment.speaker ? (
+                      <span className="rounded-full bg-indigo-100 text-indigo-800 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide">
+                        {segment.speaker}
+                      </span>
+                    ) : null}
                     {segment.title}
                   </h2>
                 </div>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Loader2, Sparkles, X } from 'lucide-react';
 import type { Project } from '../types';
 import { prepareScriptApi } from '../lib/api';
+import { applyPlaceholders } from '../lib/scriptParser';
 
 interface NewScriptModalProps {
   onClose: () => void;
@@ -11,6 +12,9 @@ interface NewScriptModalProps {
 export const NewScriptModal: React.FC<NewScriptModalProps> = ({ onClose, onCreated }) => {
   const [title, setTitle] = useState('');
   const [rawText, setRawText] = useState('');
+  const [name, setName] = useState('');
+  const [age, setAge] = useState('');
+  const [grade, setGrade] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,7 +30,7 @@ export const NewScriptModal: React.FC<NewScriptModalProps> = ({ onClose, onCreat
     try {
       const res = await prepareScriptApi({
         title: title.trim() || 'Mi nuevo guion en inglés',
-        rawText: rawText.trim(),
+        rawText: applyPlaceholders(rawText.trim(), { name, age, grade }),
         save: true,
       });
       onCreated(res.project, res.usedAI);
@@ -90,6 +94,36 @@ export const NewScriptModal: React.FC<NewScriptModalProps> = ({ onClose, onCreat
               placeholder="Pega aquí el texto en inglés..."
               className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
             />
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 space-y-2">
+            <p className="text-[11px] font-bold text-slate-600">
+              Personalizar (opcional) — rellena <code>[tu nombre]</code>,{' '}
+              <code>[tu edad]</code> y <code>[tu grado]</code>
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Nombre (Sara)"
+                className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
+              />
+              <input
+                type="text"
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+                placeholder="Edad (15)"
+                className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
+              />
+              <input
+                type="text"
+                value={grade}
+                onChange={(e) => setGrade(e.target.value)}
+                placeholder="Grado (9)"
+                className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
           </div>
 
           {error && (
