@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseScriptText, applyPlaceholders } from './scriptParser.ts';
+import { parseScriptText, applyPlaceholders, cleanExpectedText } from './scriptParser.ts';
 
 test('detecta roles de diálogo y los separa del texto', () => {
   const segs = parseScriptText(
@@ -54,4 +54,9 @@ test('texto narrativo sin roles se conserva', () => {
   assert.equal(segs.length, 1);
   assert.equal(segs[0].speaker, '');
   assert.equal(segs[0].text, 'Sofia wanted to celebrate with a big party at her house.');
+});
+
+test('cleanExpectedText deja solo el inglés (sin roles, pasos ni español)', () => {
+  const raw = '[Paso 1: Enter]\nTú (Cliente): "Hello, table?"\nTú (Mesero): "Sure!"';
+  assert.equal(cleanExpectedText(raw), 'Hello, table? Sure!');
 });

@@ -183,3 +183,19 @@ export function parseScriptText(rawText: string): ParsedSegment[] {
 
   return segments;
 }
+
+/**
+ * Extracts only the English practice text from a raw script (drops speaker
+ * roles, step headings, stage directions and Spanish instructions) so the
+ * evaluator compares the recording against clean text.
+ */
+export function cleanExpectedText(rawText: string): string {
+  const segments = parseScriptText(rawText);
+  const joined = segments
+    .map((segment) => segment.text)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (joined) return joined;
+  return String(rawText || '').replace(/\s+/g, ' ').trim();
+}

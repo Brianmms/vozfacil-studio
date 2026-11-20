@@ -19,6 +19,7 @@ import {
   fetchEvaluations,
   prepareScriptApi,
 } from '../lib/api';
+import { cleanExpectedText } from '../lib/scriptParser';
 import { PcmAudioRecorder } from '../lib/audioRecorder';
 import { convertToAsrWavChunks, decodeAudioBlob, formatTime } from '../lib/audioUtils';
 import { speakEnglishText, stopAllSpeech } from '../lib/ttsPlayer';
@@ -143,7 +144,7 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
       setIsListeningText(false);
       return;
     }
-    const clean = text.replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+    const clean = cleanExpectedText(text);
     if (!clean) return;
     setIsListeningText(true);
     try {
@@ -209,7 +210,7 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
       const wavChunks = await convertToAsrWavChunks(audioBlob, 110);
       const evaluation = await evaluateAudioApi({
         wavChunks,
-        expectedText: text.trim(),
+        expectedText: cleanExpectedText(text),
         ignoreParentheses,
         saveHistory: true,
       });
