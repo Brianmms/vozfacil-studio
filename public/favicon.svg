@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#bg)" />
+  <!-- Microphone capsule -->
+  <rect x="25" y="13" width="14" height="23" rx="7" fill="#ffffff" />
+  <!-- Microphone stand & arc -->
+  <path
+    d="M19 30.5C19 37.68 24.82 43.5 32 43.5C39.18 43.5 45 37.68 45 30.5"
+    stroke="#ffffff"
+    stroke-width="3.6"
+    stroke-linecap="round"
+  />
+  <path
+    d="M32 43.5V50.5M25 50.5H39"
+    stroke="#ffffff"
+    stroke-width="3.6"
+    stroke-linecap="round"
+  />
+  <!-- Subtle sound waves -->
+  <path
+    d="M13 24C11.2 26.8 11.2 31.2 13 34"
+    stroke="#c7d2fe"
+    stroke-width="2.8"
+    stroke-linecap="round"
+  />
+  <path
+    d="M51 24C52.8 26.8 52.8 31.2 51 34"
+    stroke="#c7d2fe"
+    stroke-width="2.8"
+    stroke-linecap="round"
+  />
+</svg>

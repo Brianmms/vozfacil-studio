@@ -1,0 +1,35 @@
+{
+  "name": "vozfacil-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "App web 100% estática en navegador (IndexedDB + Web Audio + DeepSeek BYOK) para practicar pronunciación en inglés por partes, evaluar audios y unir grabaciones.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "test": "node --test src/shared/core.test.js",
+    "dev:legacy": "concurrently \"node --watch server/index.js\" \"vite\"",
+    "test:server": "node --test server/services/alignment.test.js"
+  },
+  "dependencies": {
+    "@breezystack/lamejs": "^1.2.7",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "lucide-react": "^0.475.0",
+    "multer": "^1.4.5-lts.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.14",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-basic-ssl": "^2.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "tailwindcss": "^4.0.14",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0"
+  }
+}
