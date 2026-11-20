@@ -262,3 +262,51 @@ export function cleanExpectedText(rawText: string): string {
   if (joined) return joined;
   return String(rawText || '').replace(/\s+/g, ' ').trim();
 }
+
+const ROLE_LABEL_EN: Record<string, string> = {
+  cliente: 'Client',
+  client: 'Client',
+  mesero: 'Waiter',
+  mesera: 'Waitress',
+  waiter: 'Waiter',
+  waitress: 'Waitress',
+  camarero: 'Waiter',
+  narrador: 'Narrator',
+  narradora: 'Narrator',
+  narrator: 'Narrator',
+  profesor: 'Teacher',
+  profesora: 'Teacher',
+  teacher: 'Teacher',
+  estudiante: 'Student',
+  student: 'Student',
+};
+
+const ROLE_PHONETIC_ES: Record<string, string> = {
+  cliente: 'claient',
+  client: 'claient',
+  mesero: 'uéirer',
+  mesera: 'uéitres',
+  waiter: 'uéirer',
+  waitress: 'uéitres',
+  camarero: 'uéirer',
+  narrador: 'narréidor',
+  narradora: 'narréidora',
+  narrator: 'narréidor',
+  profesor: 'prófesor',
+  profesora: 'prófesora',
+  teacher: 'tícher',
+  estudiante: 'estiúdent',
+  student: 'estiúdent',
+};
+
+/** English label for common dialogue roles (Cliente -> Client). */
+export function speakerLabelEn(speaker: string): string {
+  const raw = String(speaker || '').trim();
+  return ROLE_LABEL_EN[raw.toLowerCase()] || raw;
+}
+
+/** Spanish phonetic for common dialogue roles (Cliente -> claient). */
+export function speakerPhoneticEs(speaker: string): string {
+  const raw = String(speaker || '').trim();
+  return ROLE_PHONETIC_ES[raw.toLowerCase()] || speakerLabelEn(raw);
+}

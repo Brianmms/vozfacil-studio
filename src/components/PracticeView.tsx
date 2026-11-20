@@ -54,6 +54,7 @@ import {
 } from '../lib/ttsPlayer';
 import { compareEvaluations, type EvaluationComparison } from '../lib/progressCompare';
 import { loadAudioBlobFromUrl } from '../lib/localStore';
+import { speakerLabelEn, speakerPhoneticEs } from '../lib/scriptParser';
 import { EvaluationCard } from './EvaluationCard';
 import { NewScriptModal } from './NewScriptModal';
 import { ConfirmDialog, type ConfirmDialogOptions } from './ConfirmDialog';
@@ -109,7 +110,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
   const [speedRate, setSpeedRate] = useState(0.85);
   const [showSpanishHelp, setShowSpanishHelp] = useState(true);
   const [easyReadMode, setEasyReadMode] = useState(false);
-  const [showSpeakerLabels, setShowSpeakerLabels] = useState(false);
+  const [showSpeakerLabels, setShowSpeakerLabels] = useState(true);
   const [isLooping, setIsLooping] = useState(false);
   const [isPlayingGuide, setIsPlayingGuide] = useState(false);
   const [isWordMode, setIsWordMode] = useState(false);
@@ -294,7 +295,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
 
   function spokenSegmentText(seg: ScriptSegment): string {
     if (showSpeakerLabels && seg.speaker) {
-      return `${seg.speaker}: ${seg.text}`;
+      return `${speakerLabelEn(seg.speaker)}: ${seg.text}`;
     }
     return seg.text;
   }
@@ -820,7 +821,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    {sp}
+                    {speakerLabelEn(sp)}
                   </button>
                 ))}
               </div>
@@ -1001,7 +1002,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                       </span>
                       {seg.speaker && (
                         <span className="rounded bg-indigo-100 text-indigo-800 px-1.5 py-0.5 font-bold">
-                          {seg.speaker}
+                          {speakerLabelEn(seg.speaker)}
                         </span>
                       )}
                       {(seg.cueBefore || seg.cueAfter) && (
@@ -1033,7 +1034,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                   <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center gap-2">
                     {segment.speaker ? (
                       <span className="rounded-full bg-indigo-100 text-indigo-800 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide">
-                        {segment.speaker}
+                        {speakerLabelEn(segment.speaker)}
                       </span>
                     ) : null}
                     {segment.title}
@@ -1142,7 +1143,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                       <p className="text-2xl sm:text-3xl font-extrabold text-indigo-950 leading-relaxed">
                         {showSpeakerLabels && segment.speaker && (
                           <span className="mr-2 rounded-lg bg-indigo-600 text-white px-2 py-0.5 align-middle text-base font-extrabold uppercase tracking-wide">
-                            {segment.speaker}:
+                            {speakerPhoneticEs(segment.speaker)}:
                           </span>
                         )}
                         {segment.phoneticEs}
@@ -1162,7 +1163,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                       <p className="text-base sm:text-lg font-semibold leading-relaxed text-slate-700 flex flex-wrap gap-x-1.5 gap-y-1">
                         {showSpeakerLabels && segment.speaker && (
                           <span className="self-center rounded-lg bg-indigo-600 text-white px-1.5 py-0.5 text-xs font-extrabold uppercase tracking-wide select-none">
-                            {segment.speaker}:
+                            {speakerLabelEn(segment.speaker)}:
                           </span>
                         )}
                         {tokens.map((token, idx) => {
@@ -1190,7 +1191,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                     <p className="text-xl sm:text-2xl font-bold leading-relaxed text-slate-900 flex flex-wrap gap-x-2 gap-y-1">
                       {showSpeakerLabels && segment.speaker && (
                         <span className="self-center rounded-lg bg-indigo-600 text-white px-2 py-0.5 text-sm font-extrabold uppercase tracking-wide select-none">
-                          {segment.speaker}:
+                          {speakerLabelEn(segment.speaker)}:
                         </span>
                       )}
                       {tokens.map((token, idx) => {

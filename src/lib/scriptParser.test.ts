@@ -6,6 +6,8 @@ import {
   applyPlaceholderValues,
   extractPlaceholders,
   cleanExpectedText,
+  speakerLabelEn,
+  speakerPhoneticEs,
 } from './scriptParser.ts';
 
 test('detecta roles de diálogo y los separa del texto', () => {
@@ -81,4 +83,12 @@ test('aplica valores dinámicos y deja los pasos intactos', () => {
   const out = applyPlaceholderValues(raw, { 'tu nombre': 'Sara', food: 'pizza' });
   assert.match(out, /\[Paso 1: Enter\]/);
   assert.match(out, /Hello Sara, I want pizza\./);
+});
+
+test('traduce roles comunes a inglés y fonética', () => {
+  assert.equal(speakerLabelEn('Cliente'), 'Client');
+  assert.equal(speakerPhoneticEs('Cliente'), 'claient');
+  assert.equal(speakerLabelEn('Mesero'), 'Waiter');
+  assert.equal(speakerPhoneticEs('Mesero'), 'uéirer');
+  assert.equal(speakerLabelEn('Sara'), 'Sara');
 });
