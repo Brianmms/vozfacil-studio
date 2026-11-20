@@ -56,6 +56,7 @@ import { compareEvaluations, type EvaluationComparison } from '../lib/progressCo
 import { loadAudioBlobFromUrl } from '../lib/localStore';
 import { EvaluationCard } from './EvaluationCard';
 import { NewScriptModal } from './NewScriptModal';
+import { ConfirmDialog, type ConfirmDialogOptions } from './ConfirmDialog';
 import { WaveformCanvas } from './WaveformCanvas';
 import { WordPopover } from './WordPopover';
 
@@ -141,6 +142,8 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
 
   // Modals / manual segment add
   const [showNewModal, setShowNewModal] = useState(false);
+  const [confirmOptions, setConfirmOptions] = useState<ConfirmDialogOptions | null>(null);
+  const confirmResolverRef = useRef<((ok: boolean) => void) | null>(null);
   const [addingManualPart, setAddingManualPart] = useState(false);
   const [manualPartText, setManualPartText] = useState('');
 
@@ -612,18 +615,39 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
     setActiveSegmentIdx(activeProject.segments.length);
   }
 
+  function askConfirm(options: ConfirmDialogOptions): Promise<boolean> {
+    return new Promise((resolve) => {
+      confirmResolverRef.current = resolve;
+      setConfirmOptions(options);
+    });
+  }
+
+  function resolveConfirm(ok: boolean) {
+    confirmResolverRef.current?.(ok);
+    confirmResolverRef.current = null;
+    setConfirmOptions(null);
+  }
+
   async function handleResetOrDeleteProject() {
     if (activeProject.id === 'sofia-birthday-v1') {
-      if (!window.confirm('¿Reiniciar el guion de Sofía (se borrarán sus tomas grabadas)?')) {
-        return;
-      }
+      const ok = await askConfirm({
+        title: '¿Reiniciar el guion de Sofía?',
+        message: 'Se borrarán sus tomas grabadas.',
+        confirmLabel: 'Reiniciar',
+        variant: 'danger',
+      });
+      if (!ok) return;
       const reset = await resetProjectApi('sofia-birthday-v1');
       await onUpdateProject(reset);
       setActiveSegmentIdx(0);
     } else {
-      if (!window.confirm(`¿Eliminar el proyecto "${activeProject.title}"?`)) {
-        return;
-      }
+      const ok = await askConfirm({
+        title: '¿Eliminar el proyecto?',
+        message: `"${activeProject.title}" se eliminará junto con sus audios.`,
+        confirmLabel: 'Eliminar',
+        variant: 'danger',
+      });
+      if (!ok) return;
       await deleteProjectApi(activeProject.id);
       onRemoveProject(activeProject.id);
     }
@@ -631,23 +655,23 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
 
   async function handleFinishAndNew() {
     if (activeProject.id === 'sofia-birthday-v1') {
-      if (
-        !window.confirm(
-          '¿Reiniciar el guion de Sofía y empezar uno nuevo? Se borrarán sus tomas grabadas.'
-        )
-      ) {
-        return;
-      }
+      const ok = await askConfirm({
+        title: '¿Reiniciar y empezar uno nuevo?',
+        message: 'Se borrarán las tomas grabadas del guion de Sofía.',
+        confirmLabel: 'Reiniciar y continuar',
+        variant: 'danger',
+      });
+      if (!ok) return;
       const reset = await resetProjectApi('sofia-birthday-v1');
       await onUpdateProject(reset);
     } else {
-      if (
-        !window.confirm(
-          `¿Terminar "${activeProject.title}"? Se borrarán el guion y sus audios para empezar uno nuevo.`
-        )
-      ) {
-        return;
-      }
+      const ok = await askConfirm({
+        title: '¿Terminar este guion?',
+        message: `"${activeProject.title}" y sus audios se borrarán para empezar uno nuevo.`,
+        confirmLabel: 'Terminar y continuar',
+        variant: 'danger',
+      });
+      if (!ok) return;
       await deleteProjectApi(activeProject.id);
       onRemoveProject(activeProject.id);
     }
@@ -658,16 +682,21 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
   async function handleClearAllAudios() {
     const takes = activeProject.segments.flatMap((seg) => seg.takes || []);
     if (takes.length === 0) {
-      window.alert('Este guion no tiene audios grabados.');
+      await askConfirm({
+        title: 'Sin audios',
+        message: 'Este guion no tiene audios grabados.',
+        confirmLabel: 'Entendido',
+        showCancel: false,
+      });
       return;
     }
-    if (
-      !window.confirm(
-        `¿Borrar los ${takes.length} audios grabados de "${activeProject.title}"? El guion se mantiene.`
-      )
-    ) {
-      return;
-    }
+    const ok = await askConfirm({
+      title: '¿Borrar todos los audios?',
+      message: `Se borrarán ${takes.length} audio(s) de "${activeProject.title}". El texto del guion se mantiene.`,
+      confirmLabel: 'Borrar audios',
+      variant: 'danger',
+    });
+    if (!ok) return;
     for (const take of takes) {
       try {
         await deleteAudioApi(take.filename);
@@ -1735,6 +1764,15 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
             onAddProject(proj);
             setShowNewModal(false);
           }}
+        />
+      )}
+
+      {confirmOptions && (
+        <ConfirmDialog
+          open
+          {...confirmOptions}
+          onConfirm={() => resolveConfirm(true)}
+          onCancel={() => resolveConfirm(false)}
         />
       )}
     </div>
