@@ -1142,7 +1142,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                       </div>
                       <p className="text-2xl sm:text-3xl font-extrabold text-indigo-950 leading-relaxed">
                         {showSpeakerLabels && segment.speaker && (
-                          <span className="mr-2 rounded-lg bg-indigo-600 text-white px-2 py-0.5 align-middle text-base font-extrabold uppercase tracking-wide">
+                          <span className="mr-2 rounded-lg bg-indigo-600 text-white px-2 py-0.5 align-middle text-base font-extrabold tracking-wide">
                             {speakerPhoneticEs(segment.speaker)}:
                           </span>
                         )}
