@@ -8,10 +8,11 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --host",
-    "test": "node --test src/shared/core.test.js",
+    "test": "node --experimental-strip-types --test src/shared/core.test.js src/lib/scriptParser.test.ts",
     "dev:legacy": "concurrently \"node --watch server/index.js\" \"vite\"",
     "test:server": "node --test server/services/alignment.test.js",
-    "deploy": "npm run build && wrangler pages deploy dist --project-name vozfacil-studio --branch main"
+    "deploy": "npm run build && wrangler pages deploy dist --project-name vozfacil-studio --branch main",
+    "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
     "@breezystack/lamejs": "^1.2.7",
