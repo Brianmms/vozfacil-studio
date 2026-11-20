@@ -55,6 +55,7 @@ export interface ScriptSegment {
   order: number;
   title: string;
   speaker?: string;
+  speakerPhoneticEs?: string;
   text: string;
   cueBefore?: string;
   cueAfter?: string;

@@ -1143,7 +1143,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                       <p className="text-2xl sm:text-3xl font-extrabold text-indigo-950 leading-relaxed">
                         {showSpeakerLabels && segment.speaker && (
                           <span className="mr-2 rounded-lg bg-indigo-600 text-white px-2 py-0.5 align-middle text-base font-extrabold tracking-wide">
-                            {speakerPhoneticEs(segment.speaker)}:
+                            {segment.speakerPhoneticEs || speakerPhoneticEs(segment.speaker)}:
                           </span>
                         )}
                         {segment.phoneticEs}
@@ -1221,6 +1221,11 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                               Léelo corrido así:{' '}
                             </span>
                             <p className="text-lg sm:text-xl font-bold text-indigo-950 leading-relaxed mt-0.5">
+                              {showSpeakerLabels && segment.speaker && (
+                                <span className="mr-2 rounded-lg bg-indigo-600 text-white px-2 py-0.5 align-middle text-sm font-extrabold tracking-wide">
+                                  {segment.speakerPhoneticEs || speakerPhoneticEs(segment.speaker)}:
+                                </span>
+                              )}
                               {segment.phoneticEs}
                             </p>
                           </div>

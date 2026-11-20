@@ -550,6 +550,7 @@ interface AiPreparedScriptJson {
   segments?: Array<{
     title?: string;
     speaker?: string;
+    speakerPhoneticEs?: string;
     text?: string;
     cueBefore?: string;
     cueAfter?: string;
@@ -586,7 +587,7 @@ export async function prepareScriptClient(params: {
   const systemPrompt = `Eres una profesora de inglés para principiantes hispanohablantes que NO saben inglés.
 Debes dividir un texto en inglés en partes cortas y fáciles de leer (entre 6 y 18 palabras por parte), conservando EXACTAMENTE cada palabra inglesa original sin cambiarla ni omitirla.
 Si el texto tiene indicaciones en español o entre paréntesis como (Pausa breve) o (Sonríe al hablar), NO las pongas en "text"; colócalas en "cueBefore" o "cueAfter" y ajusta "pauseAfterSec" (ej: 0.8 para pausa breve, 1.2 para pausa larga, 0.45 normal).
-Si el texto es un DIÁLOGO con hablantes (ej. "Tú (Cliente): ..." o "Mesero: ..."), detecta el hablante y ponlo en "speaker" (ej. "Cliente", "Mesero"). NUNCA incluyas el nombre del hablante ni el prefijo "Tú (Cliente):" dentro de "text".
+Si el texto es un DIÁLOGO con hablantes (ej. "Tú (Cliente): ..." o "Mesero: ..."), detecta el hablante, TRADÚCELO al inglés en "speaker" (Cliente→Client, Mesero→Waiter, Abuelo→Grandpa, etc.) y pon su pronunciación en español latinoamericano en "speakerPhoneticEs" (ej. "claient", "uéirer", "gránpa"). NUNCA incluyas el nombre del hablante ni el prefijo "Tú (Cliente):" dentro de "text".
 NUNCA pongas en "text" encabezados, pasos ni instrucciones no inglesas. Los corchetes como "[Paso 1: ...]" o "[Closing]" son pasos/cues: van en "cueBefore"; las indicaciones entre paréntesis como "(Pausa breve)" o "(Haces una pausa)" van en "cueAfter" y ajustan "pauseAfterSec". Ignora por completo cualquier línea que no esté en inglés.
 REGLA CRÍTICA PARA "phoneticEs": NUNCA separes sílabas con guiones (-) ni uses mayúsculas mezcladas dentro de una palabra (PROHIBIDO "so-FÍ-as" o "BÉRT-dei"). Usa español latinoamericano: NUNCA uses la "z" estilo España para la "th" del inglés (en Latinoamérica la "z" suena como "s"); usa "t" o "d" según corresponda (ej: "uit", "bértdei", "terd", "fort", "tri", "dat", "de"). Escribe cada palabra corrida y natural como español normal usando solo tildes donde va la fuerza (ej: "bértdei", "sáturdei", "sélebreit", "anfórchunetli") para que pueda leer de corrido sin pausar.
 Responde SIEMPRE en JSON válido.`;
@@ -604,7 +605,8 @@ Devuelve un JSON con exactamente esta estructura:
   "segments": [
     {
       "title": "Parte 1 — Tema corto",
-      "speaker": "Cliente o cadena vacía",
+      "speaker": "Rol en inglés (Client, Waiter...) o cadena vacía",
+      "speakerPhoneticEs": "Pronunciación del rol en español (claient, uéirer...) o cadena vacía",
       "text": "Exact English words for this short part.",
       "cueBefore": "",
       "cueAfter": "Pausa breve",
@@ -649,6 +651,7 @@ Devuelve un JSON con exactamente esta estructura:
       order: idx + 1,
       title: String(s.title || `Parte ${idx + 1}`).trim(),
       speaker: String(s.speaker || '').trim(),
+      speakerPhoneticEs: String(s.speakerPhoneticEs || '').trim(),
       text: String(s.text).trim().replace(/^["'“”«»]+|["'“”«»]+$/g, '').trim(),
       cueBefore: String(s.cueBefore || '').trim(),
       cueAfter: String(s.cueAfter || '').trim(),
