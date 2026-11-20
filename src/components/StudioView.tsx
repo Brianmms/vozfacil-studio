@@ -1071,7 +1071,7 @@ export const StudioView: React.FC<StudioViewProps> = ({
                 </button>
                 <button
                   onClick={handleStopStudioRecording}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-rose-700 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 cursor-pointer"
                 >
                   <Square className="w-3.5 h-3.5 fill-current" /> Detener y agregar
                 </button>

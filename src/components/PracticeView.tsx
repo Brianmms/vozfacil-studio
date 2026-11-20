@@ -1241,7 +1241,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                         </button>
                         <button
                           onClick={stopRecordingAndSave}
-                          className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-sm font-bold text-white hover:bg-rose-700 cursor-pointer shadow-xs"
+                          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-700 cursor-pointer shadow-xs"
                         >
                           <Square className="w-4 h-4 fill-current" />
                           Detener y guardar
