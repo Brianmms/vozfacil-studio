@@ -245,7 +245,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
 
     try {
       do {
-        const res = await speakEnglishText(segment.text, {
+        const res = await speakEnglishText(spokenSegmentText(segment), {
           voiceId,
           rate: speedRate,
           signal: controller.signal,
@@ -290,6 +290,13 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
         setActiveWordIndex(null);
       }
     }
+  }
+
+  function spokenSegmentText(seg: ScriptSegment): string {
+    if (showSpeakerLabels && seg.speaker) {
+      return `${seg.speaker}: ${seg.text}`;
+    }
+    return seg.text;
   }
 
   function findWordGuide(token: string): WordGuide | undefined {
@@ -1083,7 +1090,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                         onChange={(e) => setShowSpeakerLabels(e.target.checked)}
                         className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                       />
-                      Mostrar quién habla
+                      Mostrar y leer quién habla
                     </label>
                   )}
                 </div>
