@@ -1,5 +1,23 @@
 import { encodeWav16Bit, extractPeaksFromFloat32 } from './audioUtils';
 
+function micErrorMessage(error: unknown): string {
+  const name = (error as { name?: string } | null)?.name || '';
+  if (name === 'NotAllowedError' || name === 'SecurityError') {
+    return 'Permiso de micrófono denegado. Toca el candado del navegador, permite el micrófono y vuelve a intentar.';
+  }
+  if (
+    name === 'NotFoundError' ||
+    name === 'DevicesNotFoundError' ||
+    name === 'OverconstrainedError'
+  ) {
+    return 'No se encontró un micrófono. Conecta uno, actívalo en el sistema (Privacidad → Micrófono) y vuelve a intentar.';
+  }
+  if (name === 'NotReadableError' || name === 'TrackStartError') {
+    return 'El micrófono está en uso o bloqueado por otra app. Ciérrala o reinicia el navegador e intenta de nuevo.';
+  }
+  return 'No se pudo acceder al micrófono. Revisa que esté conectado y permitido en el navegador.';
+}
+
 export interface RecordedAudioResult {
   blob: Blob;
   durationSec: number;
@@ -30,13 +48,21 @@ export class PcmAudioRecorder {
       throw new Error('Tu navegador no soporta grabación de micrófono.');
     }
 
-    this.stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
-    });
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+    } catch (error) {
+      throw new Error(micErrorMessage(error));
+    }
+
+    if (!this.stream) {
+      throw new Error('No se encontró un micrófono conectado.');
+    }
 
     const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     this.audioCtx = new Ctx();
