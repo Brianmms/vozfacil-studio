@@ -109,6 +109,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
   const [speedRate, setSpeedRate] = useState(0.85);
   const [showSpanishHelp, setShowSpanishHelp] = useState(true);
   const [easyReadMode, setEasyReadMode] = useState(false);
+  const [showSpeakerLabels, setShowSpeakerLabels] = useState(false);
   const [isLooping, setIsLooping] = useState(false);
   const [isPlayingGuide, setIsPlayingGuide] = useState(false);
   const [isWordMode, setIsWordMode] = useState(false);
@@ -1074,6 +1075,17 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                       </>
                     )}
                   </button>
+                  {speakers.length > 0 && (
+                    <label className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={showSpeakerLabels}
+                        onChange={(e) => setShowSpeakerLabels(e.target.checked)}
+                        className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      Mostrar quién habla
+                    </label>
+                  )}
                 </div>
               </div>
 
@@ -1121,6 +1133,11 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                         Léelo corrido, sin pausar entre sílabas:
                       </div>
                       <p className="text-2xl sm:text-3xl font-extrabold text-indigo-950 leading-relaxed">
+                        {showSpeakerLabels && segment.speaker && (
+                          <span className="mr-2 rounded-lg bg-indigo-600 text-white px-2 py-0.5 align-middle text-base font-extrabold uppercase tracking-wide">
+                            {segment.speaker}:
+                          </span>
+                        )}
                         {segment.phoneticEs}
                       </p>
                       {showSpanishHelp && segment.translationEs && (
@@ -1136,6 +1153,11 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                         Texto original en inglés (toca cualquier palabra para oírla):
                       </div>
                       <p className="text-base sm:text-lg font-semibold leading-relaxed text-slate-700 flex flex-wrap gap-x-1.5 gap-y-1">
+                        {showSpeakerLabels && segment.speaker && (
+                          <span className="self-center rounded-lg bg-indigo-600 text-white px-1.5 py-0.5 text-xs font-extrabold uppercase tracking-wide select-none">
+                            {segment.speaker}:
+                          </span>
+                        )}
                         {tokens.map((token, idx) => {
                           const isHighlighted = activeWordIndex === idx;
                           return (
@@ -1159,6 +1181,11 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                 ) : (
                   <>
                     <p className="text-xl sm:text-2xl font-bold leading-relaxed text-slate-900 flex flex-wrap gap-x-2 gap-y-1">
+                      {showSpeakerLabels && segment.speaker && (
+                        <span className="self-center rounded-lg bg-indigo-600 text-white px-2 py-0.5 text-sm font-extrabold uppercase tracking-wide select-none">
+                          {segment.speaker}:
+                        </span>
+                      )}
                       {tokens.map((token, idx) => {
                         const isHighlighted = activeWordIndex === idx;
                         return (
