@@ -655,6 +655,37 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
     setShowNewModal(true);
   }
 
+  async function handleClearAllAudios() {
+    const takes = activeProject.segments.flatMap((seg) => seg.takes || []);
+    if (takes.length === 0) {
+      window.alert('Este guion no tiene audios grabados.');
+      return;
+    }
+    if (
+      !window.confirm(
+        `¿Borrar los ${takes.length} audios grabados de "${activeProject.title}"? El guion se mantiene.`
+      )
+    ) {
+      return;
+    }
+    for (const take of takes) {
+      try {
+        await deleteAudioApi(take.filename);
+      } catch {
+        // Ignore missing blobs
+      }
+    }
+    await onUpdateProject({
+      ...activeProject,
+      segments: activeProject.segments.map((seg) => ({
+        ...seg,
+        takes: [],
+        selectedTakeId: null,
+      })),
+    });
+    setActiveSegmentIdx(0);
+  }
+
   function getBestScore(seg: ScriptSegment): number | null {
     const scores = seg.takes
       .map((t) => t.evaluation?.score)
@@ -812,6 +843,14 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
           >
             <Sparkles className="w-3.5 h-3.5" />
             Terminar y crear nuevo guion
+          </button>
+
+          <button
+            onClick={handleClearAllAudios}
+            className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Limpiar todos los audios
           </button>
         </div>
 
