@@ -104,6 +104,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
   );
 
   const [activeSegmentIdx, setActiveSegmentIdx] = useState(0);
+  const [focusSpeaker, setFocusSpeaker] = useState<string | null>(null);
   const [speedRate, setSpeedRate] = useState(0.85);
   const [showSpanishHelp, setShowSpanishHelp] = useState(true);
   const [easyReadMode, setEasyReadMode] = useState(false);
@@ -152,6 +153,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
 
   useEffect(() => {
     setActiveSegmentIdx(0);
+    setFocusSpeaker(null);
     stopSpeaking();
     stopTakeAudio();
   }, [activeProject?.id]);
@@ -178,6 +180,12 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
   const segments = activeProject.segments;
   const safeIdx = Math.min(activeSegmentIdx, Math.max(0, segments.length - 1));
   const segment: ScriptSegment | undefined = segments[safeIdx];
+
+  const speakers = Array.from(
+    new Set(segments.map((s) => s.speaker).filter(Boolean))
+  ) as string[];
+  const matchesFocus = (seg: ScriptSegment) =>
+    !focusSpeaker || !seg.speaker || seg.speaker === focusSpeaker;
 
   const readyCount = segments.filter((s) => Boolean(s.selectedTakeId)).length;
   const tokens = useMemo(
@@ -654,6 +662,38 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
     return scores.length > 0 ? Math.max(...scores) : null;
   }
 
+  function selectFocus(speaker: string | null) {
+    setFocusSpeaker(speaker);
+    if (speaker) {
+      const firstIdx = segments.findIndex(
+        (seg) => !seg.speaker || seg.speaker === speaker
+      );
+      if (firstIdx >= 0) setActiveSegmentIdx(firstIdx);
+    }
+  }
+
+  function hasFocusStep(direction: 1 | -1): boolean {
+    let next = safeIdx + direction;
+    while (next >= 0 && next < segments.length) {
+      const seg = segments[next];
+      if (!focusSpeaker || !seg.speaker || seg.speaker === focusSpeaker) return true;
+      next += direction;
+    }
+    return false;
+  }
+
+  function stepSegment(direction: 1 | -1) {
+    setActiveSegmentIdx((current) => {
+      let next = current + direction;
+      while (next >= 0 && next < segments.length) {
+        const seg = segments[next];
+        if (!focusSpeaker || !seg.speaker || seg.speaker === focusSpeaker) return next;
+        next += direction;
+      }
+      return current;
+    });
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
       {/* LEFT SIDEBAR: Project & Parts list */}
@@ -683,6 +723,41 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
               </option>
             ))}
           </select>
+
+          {speakers.length > 1 && (
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Practicar rol
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => selectFocus(null)}
+                  className={`rounded-lg px-2.5 py-1 text-xs font-bold cursor-pointer ${
+                    focusSpeaker === null
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  Todos
+                </button>
+                {speakers.map((sp) => (
+                  <button
+                    key={sp}
+                    type="button"
+                    onClick={() => selectFocus(sp)}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-bold cursor-pointer ${
+                      focusSpeaker === sp
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {sp}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Progress */}
           <div className="space-y-1.5 pt-1">
@@ -789,15 +864,21 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
               const isActive = idx === safeIdx;
               const isReady = Boolean(seg.selectedTakeId);
               const best = getBestScore(seg);
+              const matches = matchesFocus(seg);
 
               return (
                 <button
                   key={seg.id}
                   onClick={() => setActiveSegmentIdx(idx)}
-                  className={`w-full text-left px-4 py-3 transition flex items-start gap-3 cursor-pointer ${
+                  disabled={!matches}
+                  className={`w-full text-left px-4 py-3 transition flex items-start gap-3 ${
+                    matches ? 'cursor-pointer' : 'opacity-30 cursor-not-allowed'
+                  } ${
                     isActive
                       ? 'bg-indigo-50/90 border-l-4 border-l-indigo-600'
-                      : 'hover:bg-slate-50'
+                      : matches
+                      ? 'hover:bg-slate-50'
+                      : ''
                   }`}
                 >
                   <div
@@ -885,18 +966,16 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
 
                 <div className="flex flex-wrap items-center gap-1.5">
                   <button
-                    onClick={() => setActiveSegmentIdx((i) => Math.max(0, i - 1))}
-                    disabled={safeIdx === 0}
+                    onClick={() => stepSegment(-1)}
+                    disabled={!hasFocusStep(-1)}
                     title="Parte anterior"
                     className="rounded-xl border border-slate-200 bg-slate-50 p-1.5 text-slate-700 hover:bg-slate-100 disabled:opacity-35 cursor-pointer"
                   >
                     <ArrowLeft className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() =>
-                      setActiveSegmentIdx((i) => Math.min(segments.length - 1, i + 1))
-                    }
-                    disabled={safeIdx >= segments.length - 1}
+                    onClick={() => stepSegment(1)}
+                    disabled={!hasFocusStep(1)}
                     title="Siguiente parte"
                     className="rounded-xl border border-slate-200 bg-slate-50 p-1.5 text-slate-700 hover:bg-slate-100 disabled:opacity-35 cursor-pointer"
                   >
@@ -1569,19 +1648,17 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
               {/* Prev / Next Navigation */}
               <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                 <button
-                  onClick={() => setActiveSegmentIdx((i) => Math.max(0, i - 1))}
-                  disabled={safeIdx === 0}
+                  onClick={() => stepSegment(-1)}
+                  disabled={!hasFocusStep(-1)}
                   className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Parte anterior
                 </button>
 
-                {safeIdx < segments.length - 1 ? (
+                {hasFocusStep(1) ? (
                   <button
-                    onClick={() =>
-                      setActiveSegmentIdx((i) => Math.min(segments.length - 1, i + 1))
-                    }
+                    onClick={() => stepSegment(1)}
                     className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800 cursor-pointer"
                   >
                     Siguiente parte

@@ -26,6 +26,8 @@ import { speakEnglishText, stopAllSpeech } from '../lib/ttsPlayer';
 import { compareEvaluations, normalizeCompareText } from '../lib/progressCompare';
 import { EvaluationCard } from './EvaluationCard';
 
+const EVALUATOR_TEXT_KEY = 'vozfacil_eval_text_v1';
+
 interface EvaluatorViewProps {
   voiceId: VoiceId;
   sofiaFullText: string;
@@ -41,8 +43,23 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
   onImportProject,
   onOpenSettings,
 }) => {
-  const [text, setText] = useState(sofiaFullText);
+  const [text, setText] = useState(() => {
+    try {
+      const saved = window.localStorage.getItem(EVALUATOR_TEXT_KEY);
+      return saved !== null ? saved : sofiaFullText;
+    } catch {
+      return sofiaFullText;
+    }
+  });
   const [ignoreParentheses, setIgnoreParentheses] = useState(true);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(EVALUATOR_TEXT_KEY, text);
+    } catch {
+      // Ignore storage quota / restricted storage errors
+    }
+  }, [text]);
 
   // Audio source (uploaded or recorded)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
