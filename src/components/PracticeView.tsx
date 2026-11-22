@@ -141,6 +141,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
     sec: number;
   } | null>(null);
   const [evaluatingTakeId, setEvaluatingTakeId] = useState<string | null>(null);
+  const [reanalyzingTakeId, setReanalyzingTakeId] = useState<string | null>(null);
   const [evalError, setEvalError] = useState<string | null>(null);
 
   // Modals / manual segment add
@@ -725,6 +726,31 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
       })),
     });
     setActiveSegmentIdx(0);
+  }
+
+  async function handleReanalyzeTake(take: Take) {
+    if (!take.evaluation) return;
+    setReanalyzingTakeId(take.id);
+    setEvalError(null);
+    try {
+      const blob = await loadAudioBlobFromUrl(take.audioUrl);
+      const audioQuality = await analyzeAudioQuality(blob);
+      const updatedSegments = activeProject.segments.map((seg) => ({
+        ...seg,
+        takes: seg.takes.map((t) =>
+          t.id === take.id && t.evaluation
+            ? { ...t, evaluation: { ...t.evaluation, audioQuality } }
+            : t
+        ),
+      }));
+      await onUpdateProject({ ...activeProject, segments: updatedSegments });
+    } catch (err) {
+      setEvalError(
+        err instanceof Error ? err.message : 'No se pudo re-analizar el audio.'
+      );
+    } finally {
+      setReanalyzingTakeId(null);
+    }
   }
 
   function getBestScore(seg: ScriptSegment): number | null {
@@ -1616,6 +1642,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                         const isSelected = segment.selectedTakeId === take.id;
                         const isPlaying = playingTakeId === take.id;
                         const isEvaluating = evaluatingTakeId === take.id;
+                        const isReanalyzing = reanalyzingTakeId === take.id;
                         const comparison = comparisonByTakeId.get(take.id) || null;
                         const isBest = take.id === bestTakeId && evaluatedChrono.length > 1;
 
@@ -1716,6 +1743,27 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                                     </>
                                   )}
                                 </button>
+
+                                {take.evaluation && (
+                                  <button
+                                    onClick={() => handleReanalyzeTake(take)}
+                                    disabled={isEvaluating || isReanalyzing}
+                                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs font-bold text-amber-900 hover:bg-amber-100 disabled:opacity-60 cursor-pointer"
+                                    title="Analiza solo la calidad (volumen, ruido, saturación) sin llamar a la IA"
+                                  >
+                                    {isReanalyzing ? (
+                                      <>
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        Analizando...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Volume2 className="w-3.5 h-3.5" />
+                                        Re-analizar audio
+                                      </>
+                                    )}
+                                  </button>
+                                )}
 
                                 <button
                                   onClick={() => handleDeleteTake(take)}
