@@ -57,6 +57,19 @@ export const EvaluationCard: React.FC<EvaluationCardProps> = ({
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      {result.audioQuality && result.audioQuality.level !== 'good' && (
+        <div
+          className={`px-4 sm:px-5 py-3 border-b flex items-start gap-2 text-xs sm:text-sm font-semibold ${
+            result.audioQuality.level === 'low'
+              ? 'bg-amber-50/90 border-amber-200 text-amber-950'
+              : 'bg-rose-50/90 border-rose-200 text-rose-950'
+          }`}
+        >
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>{result.audioQuality.message}</span>
+        </div>
+      )}
+
       {/* Progress comparison banner */}
       {comparison && (
         <div

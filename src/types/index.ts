@@ -21,6 +21,13 @@ export interface WordFeedbackItem {
   tipEs: string;
 }
 
+export interface AudioQuality {
+  level: 'good' | 'low' | 'clipping' | 'noisy';
+  rmsDb: number;
+  peakDb: number;
+  message: string;
+}
+
 export interface EvaluationResult {
   id: string;
   createdAt: string;
@@ -37,6 +44,7 @@ export interface EvaluationResult {
   summary: string;
   wordFeedback: WordFeedbackItem[];
   nextStepTip: string;
+  audioQuality?: AudioQuality;
 }
 
 export interface Take {

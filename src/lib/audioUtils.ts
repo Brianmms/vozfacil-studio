@@ -1,4 +1,4 @@
-import type { AudioCutRange } from '../types';
+import type { AudioCutRange, AudioQuality } from '../types';
 import { loadAudioBlobFromUrl } from './localStore';
 
 let sharedCtx: AudioContext | null = null;
@@ -193,6 +193,78 @@ export function mixToMono(audioBuffer: AudioBuffer): Float32Array {
     }
   }
   return out;
+}
+
+export async function analyzeAudioQuality(blob: Blob): Promise<AudioQuality> {
+  try {
+    const buffer = await decodeAudioBlob(blob);
+    const mono = mixToMono(buffer);
+    const length = mono.length;
+    if (length === 0) {
+      return {
+        level: 'low',
+        rmsDb: -100,
+        peakDb: -100,
+        message: 'El audio está vacío. Graba de nuevo.',
+      };
+    }
+
+    let sumSq = 0;
+    let peak = 0;
+    for (let i = 0; i < length; i++) {
+      const value = mono[i];
+      sumSq += value * value;
+      const abs = Math.abs(value);
+      if (abs > peak) peak = abs;
+    }
+
+    const rms = Math.sqrt(sumSq / length);
+    const rmsDb = rms > 0 ? 20 * Math.log10(rms) : -100;
+    const peakDb = peak > 0 ? 20 * Math.log10(peak) : -100;
+    const roundedRms = Number(rmsDb.toFixed(1));
+    const roundedPeak = Number(peakDb.toFixed(1));
+
+    if (peakDb >= -0.5) {
+      return {
+        level: 'clipping',
+        rmsDb: roundedRms,
+        peakDb: roundedPeak,
+        message:
+          'El audio se escucha saturado (distorsionado). Baja el volumen o aléjate un poco del micrófono.',
+      };
+    }
+    if (rmsDb <= -38) {
+      return {
+        level: 'low',
+        rmsDb: roundedRms,
+        peakDb: roundedPeak,
+        message:
+          'Se escucha muy lejos o bajito. Acércate al micrófono y habla un poco más fuerte.',
+      };
+    }
+    if (rmsDb >= -8) {
+      return {
+        level: 'clipping',
+        rmsDb: roundedRms,
+        peakDb: roundedPeak,
+        message:
+          'Se escucha muy fuerte y puede saturarse. Aléjate un poco del micrófono.',
+      };
+    }
+    return {
+      level: 'good',
+      rmsDb: roundedRms,
+      peakDb: roundedPeak,
+      message: 'Buen nivel de audio.',
+    };
+  } catch {
+    return {
+      level: 'good',
+      rmsDb: 0,
+      peakDb: 0,
+      message: 'No se pudo analizar la calidad del audio.',
+    };
+  }
 }
 
 export function encodeWav16Bit(samples: Float32Array, sampleRate: number): Blob {

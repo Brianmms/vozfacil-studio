@@ -40,6 +40,7 @@ import {
 } from '../lib/api';
 import { PcmAudioRecorder } from '../lib/audioRecorder';
 import {
+  analyzeAudioQuality,
   convertBlobToCleanWav,
   convertToAsrWavChunks,
   ensureAudioContextRunning,
@@ -563,16 +564,18 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
         ignoreParentheses: true,
         saveHistory: false,
       });
+      const audioQuality = blob ? await analyzeAudioQuality(blob) : undefined;
+      const evaluated = { ...result, audioQuality };
 
       const updatedSegments = baseProject.segments.map((s) => {
         if (s.id !== targetSeg.id) return s;
         const nextTakes = s.takes.map((t) =>
-          t.id === take.id ? { ...t, evaluation: result } : t
+          t.id === take.id ? { ...t, evaluation: evaluated } : t
         );
         const currSelected = nextTakes.find((t) => t.id === s.selectedTakeId);
         const currSelectedScore = currSelected?.evaluation?.score ?? -1;
         const shouldPromote =
-          !s.selectedTakeId || result.score > currSelectedScore;
+          !s.selectedTakeId || evaluated.score > currSelectedScore;
 
         return {
           ...s,

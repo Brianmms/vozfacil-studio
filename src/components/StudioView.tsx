@@ -38,6 +38,7 @@ import { deleteAudioApi, evaluateAudioApi, uploadAudioBlob } from '../lib/api';
 import { PcmAudioRecorder } from '../lib/audioRecorder';
 import { encodeAudioBufferToMp3, renderStitchedAudio } from '../lib/audioStitcher';
 import {
+  analyzeAudioQuality,
   convertBlobToCleanWav,
   convertToAsrWavChunks,
   detectInternalSilences,
@@ -57,6 +58,7 @@ import {
 import { EvaluationCard } from './EvaluationCard';
 import { WaveformCanvas } from './WaveformCanvas';
 import { speakEnglishText, stopAllSpeech } from '../lib/ttsPlayer';
+import { speakerLabelEn } from '../lib/scriptParser';
 
 interface StudioViewProps {
   project: Project;
@@ -837,7 +839,8 @@ export const StudioView: React.FC<StudioViewProps> = ({
         ignoreParentheses: true,
         saveHistory: true,
       });
-      setMasterEvaluation(res);
+      const audioQuality = await analyzeAudioQuality(rendered.wavBlob);
+      setMasterEvaluation({ ...res, audioQuality });
     } catch (err) {
       setStudioError(
         err instanceof Error ? err.message : 'No se pudo evaluar el audio unido.'
@@ -1330,7 +1333,7 @@ export const StudioView: React.FC<StudioViewProps> = ({
                 >
                   <span className="font-bold">{off.title}</span>
                   {clip?.speaker ? (
-                    <span className="ml-1 text-indigo-300">· {clip.speaker}</span>
+                    <span className="ml-1 text-indigo-300">· {speakerLabelEn(clip.speaker)}</span>
                   ) : null}
                   <span className="block mt-0.5 opacity-90 leading-snug">{clip?.text || ''}</span>
                 </button>
@@ -1401,8 +1404,10 @@ export const StudioView: React.FC<StudioViewProps> = ({
                     }
                     setDragIndex(null);
                   }}
-                  className="rounded-2xl bg-white border border-slate-200 shadow-xs p-4 space-y-3 hover:border-indigo-200 transition"
+                  className="rounded-2xl bg-white border border-slate-200 shadow-xs p-4 hover:border-indigo-200 transition"
                 >
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="lg:col-span-2 space-y-3">
                   {/* Clip header */}
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2 flex-1 min-w-[200px]">
@@ -1733,6 +1738,46 @@ export const StudioView: React.FC<StudioViewProps> = ({
                         }
                         className="w-full accent-indigo-600 cursor-pointer"
                       />
+                    </div>
+                  </div>
+                    </div>
+
+                    <div className="lg:col-span-1">
+                      {clip.text ? (
+                        <div className="rounded-xl bg-indigo-50/70 border border-indigo-100 p-3 space-y-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700">
+                              Texto en inglés
+                            </span>
+                            {clip.speaker && (
+                              <span className="rounded-full bg-indigo-600 text-white px-2 py-0.5 text-[10px] font-bold">
+                                {speakerLabelEn(clip.speaker)}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm font-semibold text-slate-800 leading-snug">
+                            {clip.text}
+                          </p>
+                          {clip.sourceSegmentId && (
+                            <button
+                              onClick={() => {
+                                const seg = project.segments.find(
+                                  (s) => s.id === clip.sourceSegmentId
+                                );
+                                if (seg) handlePlayTeleprompterGuide(seg);
+                              }}
+                              className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 text-white px-2.5 py-1 text-[11px] font-bold hover:bg-indigo-700 cursor-pointer"
+                            >
+                              <Volume2 className="w-3 h-3" /> Escuchar guía
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-[11px] text-slate-500">
+                          Clip libre (sin texto guía)
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
