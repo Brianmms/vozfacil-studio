@@ -60,7 +60,7 @@ import { speakerLabelEn, speakerPhoneticEs } from '../lib/scriptParser';
 import { EvaluationCard } from './EvaluationCard';
 import { NewScriptModal } from './NewScriptModal';
 import { ConfirmDialog, type ConfirmDialogOptions } from './ConfirmDialog';
-import { SyllableChips } from './SyllableChips';
+import { FriendlyGuideText } from './FriendlyGuideText';
 import { MicTestModal } from './MicTestModal';
 import { WaveformCanvas } from './WaveformCanvas';
 import { WordPopover } from './WordPopover';
@@ -1208,7 +1208,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                   <>
                     <div className={`rounded-xl border p-4 space-y-2 ${friendlyReading ? 'bg-[#fdf6e3] border-amber-200' : 'bg-indigo-50 border-indigo-200'}`}>
                       <div className={`text-xs font-extrabold uppercase tracking-wider ${friendlyReading ? 'text-amber-800' : 'text-indigo-700'}`}>
-                        {friendlyReading ? 'Léelo por sílabas:' : 'Léelo corrido, sin pausar entre sílabas:'}
+                        {friendlyReading ? 'Léelo despacio, mirando las vocales:' : 'Léelo corrido, sin pausar entre sílabas:'}
                       </div>
                       <p className={`text-2xl sm:text-3xl font-extrabold text-indigo-950 ${friendlyReading ? 'leading-loose tracking-wide' : 'leading-relaxed'}`}>
                         {showSpeakerLabels && segment.speaker && (
@@ -1216,7 +1216,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                             {segment.speakerPhoneticEs || speakerPhoneticEs(segment.speaker)}:
                           </span>
                         )}
-                        {friendlyReading ? <SyllableChips text={segment.phoneticEs} /> : segment.phoneticEs}
+                        {friendlyReading ? <FriendlyGuideText text={segment.phoneticEs} /> : segment.phoneticEs}
                       </p>
                       {showSpanishHelp && segment.translationEs && (
                         <div className="text-xs sm:text-sm text-slate-700 pt-2 border-t border-indigo-200/80">
@@ -1288,7 +1288,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                         {segment.phoneticEs && (
                           <div>
                             <span className={`text-[11px] font-bold uppercase tracking-wider ${friendlyReading ? 'text-amber-800' : 'text-indigo-700'}`}>
-                              {friendlyReading ? 'Léelo por sílabas:' : 'Léelo corrido así:'}
+                              {friendlyReading ? 'Léelo despacio, mirando las vocales:' : 'Léelo corrido así:'}
                             </span>
                             <p className={`text-lg sm:text-xl font-bold text-indigo-950 mt-0.5 ${friendlyReading ? 'leading-loose tracking-wide' : 'leading-relaxed'}`}>
                               {showSpeakerLabels && segment.speaker && (
@@ -1296,7 +1296,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                                   {segment.speakerPhoneticEs || speakerPhoneticEs(segment.speaker)}:
                                 </span>
                               )}
-                              {friendlyReading ? <SyllableChips text={segment.phoneticEs} /> : segment.phoneticEs}
+                              {friendlyReading ? <FriendlyGuideText text={segment.phoneticEs} /> : segment.phoneticEs}
                             </p>
                           </div>
                         )}
