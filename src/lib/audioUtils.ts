@@ -209,43 +209,82 @@ export async function analyzeAudioQuality(blob: Blob): Promise<AudioQuality> {
       };
     }
 
-    let sumSq = 0;
+    const frameSize = Math.max(256, Math.round(buffer.sampleRate * 0.05));
+    const frameRms: number[] = [];
     let peak = 0;
-    for (let i = 0; i < length; i++) {
-      const value = mono[i];
-      sumSq += value * value;
-      const abs = Math.abs(value);
-      if (abs > peak) peak = abs;
+    let clippedSamples = 0;
+
+    for (let start = 0; start < length; start += frameSize) {
+      const end = Math.min(length, start + frameSize);
+      let sumSq = 0;
+      for (let i = start; i < end; i++) {
+        const value = mono[i];
+        sumSq += value * value;
+        const abs = Math.abs(value);
+        if (abs > peak) peak = abs;
+        if (abs >= 0.99) clippedSamples += 1;
+      }
+      frameRms.push(Math.sqrt(sumSq / Math.max(1, end - start)));
     }
 
-    const rms = Math.sqrt(sumSq / length);
-    const rmsDb = rms > 0 ? 20 * Math.log10(rms) : -100;
-    const peakDb = peak > 0 ? 20 * Math.log10(peak) : -100;
-    const roundedRms = Number(rmsDb.toFixed(1));
+    const sorted = [...frameRms].sort((a, b) => a - b);
+    const percentile = (p: number) => {
+      if (sorted.length === 0) return 0;
+      const index = Math.min(
+        sorted.length - 1,
+        Math.max(0, Math.round(p * (sorted.length - 1)))
+      );
+      return sorted[index];
+    };
+
+    const toDb = (value: number) => (value > 0 ? 20 * Math.log10(value) : -100);
+    // 10th percentile ~= background noise floor
+    const noiseDb = toDb(percentile(0.1));
+    // Average loudness of frames that actually contain voice (ignores silence)
+    const activeFrames = frameRms.filter((value) => toDb(value) > noiseDb + 6);
+    const speechLevel =
+      activeFrames.length > 0
+        ? activeFrames.reduce((acc, value) => acc + value, 0) / activeFrames.length
+        : percentile(0.9);
+    const speechDb = toDb(speechLevel);
+    const snr = speechDb - noiseDb;
+    const peakDb = toDb(peak);
+    const clippingRatio = clippedSamples / length;
+
+    const rmsDb = Number(speechDb.toFixed(1));
     const roundedPeak = Number(peakDb.toFixed(1));
 
-    if (peakDb >= -0.5) {
+    if (clippingRatio >= 0.002) {
       return {
         level: 'clipping',
-        rmsDb: roundedRms,
+        rmsDb,
         peakDb: roundedPeak,
         message:
-          'El audio se escucha saturado (distorsionado). Baja el volumen o aléjate un poco del micrófono.',
+          'El audio se escucha saturado/distorsionado. Baja el volumen del micrófono o aléjate un poco.',
       };
     }
-    if (rmsDb <= -38) {
+    if (speechDb <= -32) {
       return {
         level: 'low',
-        rmsDb: roundedRms,
+        rmsDb,
         peakDb: roundedPeak,
         message:
           'Se escucha muy lejos o bajito. Acércate al micrófono y habla un poco más fuerte.',
       };
     }
-    if (rmsDb >= -8) {
+    if (snr < 12) {
+      return {
+        level: 'noisy',
+        rmsDb,
+        peakDb: roundedPeak,
+        message:
+          'Se oye poco claro o con ruido de fondo (como lejos). Acércate al micrófono y busca un lugar más silencioso.',
+      };
+    }
+    if (speechDb >= -5) {
       return {
         level: 'clipping',
-        rmsDb: roundedRms,
+        rmsDb,
         peakDb: roundedPeak,
         message:
           'Se escucha muy fuerte y puede saturarse. Aléjate un poco del micrófono.',
@@ -253,7 +292,7 @@ export async function analyzeAudioQuality(blob: Blob): Promise<AudioQuality> {
     }
     return {
       level: 'good',
-      rmsDb: roundedRms,
+      rmsDb,
       peakDb: roundedPeak,
       message: 'Buen nivel de audio.',
     };
