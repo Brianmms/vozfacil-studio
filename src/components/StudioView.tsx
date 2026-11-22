@@ -824,7 +824,10 @@ export const StudioView: React.FC<StudioViewProps> = ({
       const expectedParts = clips
         .map((c) => {
           if (!c.sourceSegmentId) return '';
-          return project.segments.find((s) => s.id === c.sourceSegmentId)?.text || '';
+          const seg = project.segments.find((s) => s.id === c.sourceSegmentId);
+          if (!seg) return '';
+          const prefix = seg.speaker ? `${speakerLabelEn(seg.speaker)} ` : '';
+          return `${prefix}${seg.text}`;
         })
         .filter(Boolean);
 

@@ -57,6 +57,7 @@ import {
 import { compareEvaluations, type EvaluationComparison } from '../lib/progressCompare';
 import { loadAudioBlobFromUrl } from '../lib/localStore';
 import { speakerLabelEn, speakerPhoneticEs } from '../lib/scriptParser';
+import { numberGuide } from '../lib/numbers';
 import { EvaluationCard } from './EvaluationCard';
 import { NewScriptModal } from './NewScriptModal';
 import { ConfirmDialog, type ConfirmDialogOptions } from './ConfirmDialog';
@@ -318,9 +319,21 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
   }
 
   function findWordGuide(token: string): WordGuide | undefined {
-    if (!segment?.words?.length) return undefined;
     const key = cleanWordKey(token);
-    return segment.words.find((w) => cleanWordKey(w.word) === key);
+    if (segment?.words?.length) {
+      const found = segment.words.find((w) => cleanWordKey(w.word) === key);
+      if (found) return found;
+    }
+    const numeric = numberGuide(token);
+    if (numeric) {
+      return {
+        word: numeric.word,
+        phoneticEs: numeric.phoneticEs,
+        meaningEs: numeric.meaningEs,
+        tipEs: numeric.tipEs,
+      };
+    }
+    return undefined;
   }
 
   function handleWordClick(token: string) {
@@ -574,9 +587,13 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
         blob = await loadAudioBlobFromUrl(take.audioUrl);
       }
       const wavChunks = await convertToAsrWavChunks(blob, 110);
+      const rolePrefix =
+        showSpeakerLabels && targetSeg.speaker
+          ? `${speakerLabelEn(targetSeg.speaker)} `
+          : '';
       const result = await evaluateAudioApi({
         wavChunks,
-        expectedText: targetSeg.text,
+        expectedText: `${rolePrefix}${targetSeg.text}`,
         ignoreParentheses: true,
         saveHistory: false,
       });
@@ -1127,6 +1144,19 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                     🎯 {easyReadMode ? 'Lectura fácil: Activa' : 'Lectura fácil (solo español grande)'}
                   </button>
                   <button
+                    type="button"
+                    onClick={() => setFriendlyReading((v) => !v)}
+                    className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
+                      friendlyReading
+                        ? 'bg-sky-600 border-sky-600 text-white'
+                        : 'bg-sky-50 border-sky-200 text-sky-800 hover:bg-sky-100'
+                    }`}
+                    title="Resalta las vocales y usa fondo crema para leer mejor"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    {friendlyReading ? 'Lectura amigable: On' : 'Lectura amigable'}
+                  </button>
+                  <button
                     onClick={() => setShowSpanishHelp((v) => !v)}
                     className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 cursor-pointer"
                   >
@@ -1151,19 +1181,6 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                       Mostrar y leer quién habla
                     </label>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => setFriendlyReading((v) => !v)}
-                    className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
-                      friendlyReading
-                        ? 'bg-sky-600 border-sky-600 text-white'
-                        : 'bg-sky-50 border-sky-200 text-sky-800 hover:bg-sky-100'
-                    }`}
-                    title="Agrupa la guía en sílabas con colores suaves y fondo crema"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    {friendlyReading ? 'Lectura amigable: On' : 'Lectura amigable'}
-                  </button>
                 </div>
               </div>
 
