@@ -63,7 +63,6 @@ import { NewScriptModal } from './NewScriptModal';
 import { ConfirmDialog, type ConfirmDialogOptions } from './ConfirmDialog';
 import { FriendlyGuideText } from './FriendlyGuideText';
 import { MicTestModal } from './MicTestModal';
-import { CelebrationOverlay } from './CelebrationOverlay';
 import { WaveformCanvas } from './WaveformCanvas';
 import { WordPopover } from './WordPopover';
 
@@ -78,6 +77,7 @@ interface PracticeViewProps {
   onRemoveProject: (id: string) => void;
   onGoToStudio: () => void;
   onOpenSettings?: () => void;
+  onCelebrate?: (score: number, message?: string) => void;
 }
 
 const SPEED_OPTIONS = [
@@ -105,6 +105,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
   onRemoveProject,
   onGoToStudio,
   onOpenSettings,
+  onCelebrate,
 }) => {
   const activeProject = useMemo(
     () => projects.find((p) => p.id === activeProjectId) || projects[0],
@@ -157,8 +158,6 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
   // Modals / manual segment add
   const [showNewModal, setShowNewModal] = useState(false);
   const [showMicTest, setShowMicTest] = useState(false);
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [celebrationMessage, setCelebrationMessage] = useState('¡Muy bien!');
   const [confirmOptions, setConfirmOptions] = useState<ConfirmDialogOptions | null>(null);
   const confirmResolverRef = useRef<((ok: boolean) => void) | null>(null);
   const [addingManualPart, setAddingManualPart] = useState(false);
@@ -608,9 +607,11 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
         fluency,
         score: fluency ? Math.max(0, result.score - fluency.penalty) : result.score,
       };
-      if (evaluated.score >= 90) {
-        setCelebrationMessage(evaluated.score >= 100 ? '¡PERFECTO! 🏆' : '¡Muy bien! 🎉');
-        setShowCelebration(true);
+      if (evaluated.score > 95) {
+        onCelebrate?.(
+          evaluated.score,
+          evaluated.score >= 100 ? '¡PERFECTO! 🏆🐞' : '¡Súper bien! 🐞✨'
+        );
       }
 
       const updatedSegments = baseProject.segments.map((s) => {
@@ -1933,12 +1934,6 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
       )}
 
       <MicTestModal open={showMicTest} onClose={() => setShowMicTest(false)} />
-
-      <CelebrationOverlay
-        show={showCelebration}
-        message={celebrationMessage}
-        onDone={() => setShowCelebration(false)}
-      />
 
       {confirmOptions && (
         <ConfirmDialog

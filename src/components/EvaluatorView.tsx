@@ -40,6 +40,7 @@ interface EvaluatorViewProps {
   hasApiKey: boolean;
   onImportProject: (project: Project) => void;
   onOpenSettings?: () => void;
+  onCelebrate?: (score: number, message?: string) => void;
 }
 
 export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
@@ -48,6 +49,7 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
   hasApiKey,
   onImportProject,
   onOpenSettings,
+  onCelebrate,
 }) => {
   const [text, setText] = useState(() => {
     try {
@@ -241,14 +243,21 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
       const fluency = audioBlob
         ? await analyzeFluency(audioBlob, cleanExpectedText(text))
         : undefined;
+      const finalScore = fluency
+        ? Math.max(0, evaluation.score - fluency.penalty)
+        : evaluation.score;
       setResult({
         ...evaluation,
         audioQuality,
         fluency,
-        score: fluency
-          ? Math.max(0, evaluation.score - fluency.penalty)
-          : evaluation.score,
+        score: finalScore,
       });
+      if (finalScore > 95) {
+        onCelebrate?.(
+          finalScore,
+          finalScore >= 100 ? '¡PERFECTO! 🏆🐞' : '¡Súper bien! 🐞✨'
+        );
+      }
       const updatedHistory = await fetchEvaluations();
       setHistory(updatedHistory);
     } catch (err) {

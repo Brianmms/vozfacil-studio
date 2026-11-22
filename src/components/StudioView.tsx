@@ -68,6 +68,7 @@ interface StudioViewProps {
   onUpdateProject: (updated: Project) => Promise<void>;
   onGoToPractice: () => void;
   onOpenSettings?: () => void;
+  onCelebrate?: (score: number, message?: string) => void;
 }
 
 function segmentToClip(seg: ScriptSegment, take: Take): StudioClip {
@@ -97,6 +98,7 @@ export const StudioView: React.FC<StudioViewProps> = ({
   onUpdateProject,
   onGoToPractice,
   onOpenSettings,
+  onCelebrate,
 }) => {
   const [clips, setClips] = useState<StudioClip[]>([]);
   const [normalizeVolume, setNormalizeVolume] = useState(true);
@@ -845,12 +847,19 @@ export const StudioView: React.FC<StudioViewProps> = ({
       });
       const audioQuality = await analyzeAudioQuality(rendered.wavBlob);
       const fluency = await analyzeFluency(rendered.wavBlob, expectedText);
+      const finalScore = Math.max(0, res.score - fluency.penalty);
       setMasterEvaluation({
         ...res,
         audioQuality,
         fluency,
-        score: Math.max(0, res.score - fluency.penalty),
+        score: finalScore,
       });
+      if (finalScore > 95) {
+        onCelebrate?.(
+          finalScore,
+          finalScore >= 100 ? '¡PERFECTO! 🏆🐞' : '¡Súper bien! 🐞✨'
+        );
+      }
     } catch (err) {
       setStudioError(
         err instanceof Error ? err.message : 'No se pudo evaluar el audio unido.'

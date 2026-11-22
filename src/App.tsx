@@ -14,6 +14,7 @@ import type { HealthStatus, Project, VoiceId } from './types';
 import { fetchHealth, fetchProjects, saveProjectApi } from './lib/api';
 import { subscribeSettingsChange } from './lib/settings';
 import { SOFIA_FULL_RAW_TEXT } from './shared/sofiaScript';
+import { CelebrationOverlay } from './components/CelebrationOverlay';
 import { EvaluatorView } from './components/EvaluatorView';
 import { PracticeView } from './components/PracticeView';
 import { SettingsModal } from './components/SettingsModal';
@@ -31,6 +32,52 @@ export const App: React.FC = () => {
   const [activeProjectId, setActiveProjectId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [celebration, setCelebration] = useState<{
+    show: boolean;
+    message: string;
+    score?: number;
+    key: number;
+  }>({
+    show: false,
+    message: '¡Súper bien! 🐞✨',
+    key: 0,
+  });
+
+  const triggerCelebration = useCallback((score: number, customMessage?: string) => {
+    const rounded = Math.round(score);
+    if (rounded <= 95) return;
+    const defaultMsg =
+      rounded >= 100 ? '¡PERFECTO! 🏆🐞' : '¡Súper bien! 🐞✨';
+    setCelebration((prev) => ({
+      show: true,
+      message: customMessage || defaultMsg,
+      score: rounded,
+      key: prev.key + 1,
+    }));
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const previewParam = params.get('celebrate');
+    if (previewParam !== null) {
+      const score = Number(previewParam);
+      if (Number.isFinite(score) && score > 95) {
+        triggerCelebration(score);
+      }
+    }
+
+    const onCelebrateEvent = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{ score?: number; message?: string }>
+      ).detail;
+      const score = typeof detail?.score === 'number' ? detail.score : 96;
+      if (score > 95) {
+        triggerCelebration(score, detail?.message);
+      }
+    };
+    window.addEventListener('vozfacil:celebrate', onCelebrateEvent);
+    return () => window.removeEventListener('vozfacil:celebrate', onCelebrateEvent);
+  }, [triggerCelebration]);
 
   const refreshHealth = useCallback(async () => {
     const status = await fetchHealth();
@@ -243,6 +290,7 @@ export const App: React.FC = () => {
                 onRemoveProject={handleRemoveProject}
                 onGoToStudio={() => setActiveTab('studio')}
                 onOpenSettings={() => setShowSettings(true)}
+                onCelebrate={triggerCelebration}
               />
             )}
 
@@ -254,6 +302,7 @@ export const App: React.FC = () => {
                 onUpdateProject={handleUpdateProject}
                 onGoToPractice={() => setActiveTab('practice')}
                 onOpenSettings={() => setShowSettings(true)}
+                onCelebrate={triggerCelebration}
               />
             )}
 
@@ -264,6 +313,7 @@ export const App: React.FC = () => {
                 hasApiKey={hasApiKey}
                 onImportProject={handleAddProject}
                 onOpenSettings={() => setShowSettings(true)}
+                onCelebrate={triggerCelebration}
               />
             )}
           </>
@@ -274,6 +324,14 @@ export const App: React.FC = () => {
         Tus grabaciones, guiones y clave DeepSeek se guardan de forma privada únicamente en
         este dispositivo y navegador.
       </footer>
+
+      <CelebrationOverlay
+        show={celebration.show}
+        message={celebration.message}
+        score={celebration.score}
+        triggerKey={celebration.key}
+        onDone={() => setCelebration((prev) => ({ ...prev, show: false }))}
+      />
 
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </div>

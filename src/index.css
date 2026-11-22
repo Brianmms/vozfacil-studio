@@ -44,3 +44,96 @@
 .animate-soft-pulse {
   animation: softPulse 1.4s ease-in-out infinite;
 }
+
+/* High-score celebration animations */
+@keyframes celebrationPopIn {
+  0% {
+    opacity: 0;
+    transform: translateY(48px) scale(0.65);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes celebrationFadeOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.9);
+  }
+}
+
+@keyframes ladybugDance {
+  0%, 100% {
+    transform: translate3d(-4px, 0, 0) rotate(-2.5deg);
+  }
+  25% {
+    transform: translate3d(0, -8px, 0) rotate(1deg);
+  }
+  50% {
+    transform: translate3d(4px, 0, 0) rotate(2.5deg);
+  }
+  75% {
+    transform: translate3d(0, -8px, 0) rotate(-1deg);
+  }
+}
+
+@keyframes ladybugSparkle {
+  0%, 100% {
+    opacity: 0.25;
+    transform: translateY(4px) scale(0.8) rotate(-8deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1.2) rotate(10deg);
+  }
+}
+
+@keyframes celebrationBadgeBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-celebration-in {
+  animation: celebrationPopIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-celebration-out {
+  animation: celebrationFadeOut 0.48s ease-in forwards;
+}
+
+.animate-ladybug-dance {
+  transform-origin: bottom center;
+  animation: ladybugDance 1.15s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-ladybug-sparkle {
+  animation: ladybugSparkle 1.4s ease-in-out infinite;
+}
+
+.animate-celebration-badge {
+  animation: celebrationBadgeBounce 1.3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-celebration-in,
+  .animate-ladybug-dance,
+  .animate-ladybug-sparkle,
+  .animate-celebration-badge {
+    animation: none;
+  }
+}

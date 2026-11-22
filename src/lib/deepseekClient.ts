@@ -18,7 +18,6 @@ import {
 } from './localStore';
 import { getDeepSeekSettings, type DeepSeekSettings } from './settings';
 import { parseScriptText } from './scriptParser';
-import { replaceNumbersInPhonetic } from './numbers';
 
 export class DeepSeekClientError extends Error {
   status: number;
