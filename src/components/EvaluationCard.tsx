@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import type { EvaluationResult, VoiceId } from '../types';
 import type { EvaluationComparison } from '../lib/progressCompare';
-import { speakEnglishText } from '../lib/ttsPlayer';
+import { speakEnglishText, speakSpanishText, stopAllSpeech } from '../lib/ttsPlayer';
 
 interface EvaluationCardProps {
   result: EvaluationResult;
@@ -29,6 +29,7 @@ export const EvaluationCard: React.FC<EvaluationCardProps> = ({
   comparison = null,
 }) => {
   const [playingWord, setPlayingWord] = useState<string | null>(null);
+  const [isSpeakingFeedback, setIsSpeakingFeedback] = useState(false);
 
   const score = Math.max(0, Math.min(100, result.score));
   const strokeColor =
@@ -52,6 +53,41 @@ export const EvaluationCard: React.FC<EvaluationCardProps> = ({
       await speakEnglishText(clean, { voiceId, rate: 0.78 });
     } finally {
       setPlayingWord(null);
+    }
+  };
+
+  const buildFeedbackSpeech = () => {
+    const parts: string[] = [];
+    if (result.encouragingTitle) parts.push(result.encouragingTitle);
+    if (result.summary) parts.push(result.summary);
+    const wordTips = (result.wordFeedback || [])
+      .filter((item) => item.tipEs)
+      .slice(0, 4)
+      .map((item) => `${item.word}: ${item.tipEs}`);
+    if (wordTips.length > 0) parts.push(...wordTips);
+    if (result.nextStepTip) parts.push(result.nextStepTip);
+    if (result.fluency && result.fluency.level !== 'natural') {
+      parts.push(result.fluency.message);
+    }
+    if (result.audioQuality && result.audioQuality.level !== 'good') {
+      parts.push(result.audioQuality.message);
+    }
+    return parts.join('. ');
+  };
+
+  const toggleFeedbackSpeech = async () => {
+    if (isSpeakingFeedback) {
+      stopAllSpeech();
+      setIsSpeakingFeedback(false);
+      return;
+    }
+    const speech = buildFeedbackSpeech();
+    if (!speech) return;
+    setIsSpeakingFeedback(true);
+    try {
+      await speakSpanishText(speech);
+    } finally {
+      setIsSpeakingFeedback(false);
     }
   };
 
@@ -87,6 +123,20 @@ export const EvaluationCard: React.FC<EvaluationCardProps> = ({
           </span>
         </div>
       )}
+
+      <div className="px-4 sm:px-5 py-2 border-b bg-indigo-50/60 border-indigo-100 flex flex-wrap items-center justify-between gap-2">
+        <span className="text-[11px] sm:text-xs font-semibold text-indigo-900">
+          ¿Prefieres escuchar el feedback?
+        </span>
+        <button
+          type="button"
+          onClick={toggleFeedbackSpeech}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-indigo-700 cursor-pointer"
+        >
+          <Volume2 className="w-3.5 h-3.5" />
+          {isSpeakingFeedback ? 'Detener' : 'Escuchar feedback'}
+        </button>
+      </div>
 
       {/* Progress comparison banner */}
       {comparison && (

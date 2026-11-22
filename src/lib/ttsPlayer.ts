@@ -15,6 +15,36 @@ export function stopAllSpeech(): void {
   }
 }
 
+export function speakSpanishText(text: string, rate = 0.95): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      resolve();
+      return;
+    }
+    const clean = String(text || '').trim();
+    if (!clean) {
+      resolve();
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(clean);
+    utterance.lang = 'es-MX';
+    utterance.rate = Math.max(0.6, Math.min(1.2, rate));
+
+    const voices = window.speechSynthesis.getVoices();
+    const spanishVoice = voices.find((voice) =>
+      voice.lang.toLowerCase().startsWith('es')
+    );
+    if (spanishVoice) utterance.voice = spanishVoice;
+
+    utterance.onend = () => resolve();
+    utterance.onerror = () => resolve();
+
+    window.speechSynthesis.speak(utterance);
+  });
+}
+
 function speakWithBrowserFallback(
   text: string,
   rate: number,

@@ -60,6 +60,8 @@ import { speakerLabelEn, speakerPhoneticEs } from '../lib/scriptParser';
 import { EvaluationCard } from './EvaluationCard';
 import { NewScriptModal } from './NewScriptModal';
 import { ConfirmDialog, type ConfirmDialogOptions } from './ConfirmDialog';
+import { SyllableChips } from './SyllableChips';
+import { MicTestModal } from './MicTestModal';
 import { WaveformCanvas } from './WaveformCanvas';
 import { WordPopover } from './WordPopover';
 
@@ -113,6 +115,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
   const [showSpanishHelp, setShowSpanishHelp] = useState(true);
   const [easyReadMode, setEasyReadMode] = useState(false);
   const [showSpeakerLabels, setShowSpeakerLabels] = useState(true);
+  const [friendlyReading, setFriendlyReading] = useState(false);
   const [isLooping, setIsLooping] = useState(false);
   const [isPlayingGuide, setIsPlayingGuide] = useState(false);
   const [isWordMode, setIsWordMode] = useState(false);
@@ -151,6 +154,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
 
   // Modals / manual segment add
   const [showNewModal, setShowNewModal] = useState(false);
+  const [showMicTest, setShowMicTest] = useState(false);
   const [confirmOptions, setConfirmOptions] = useState<ConfirmDialogOptions | null>(null);
   const confirmResolverRef = useRef<((ok: boolean) => void) | null>(null);
   const [addingManualPart, setAddingManualPart] = useState(false);
@@ -1147,6 +1151,19 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                       Mostrar y leer quién habla
                     </label>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setFriendlyReading((v) => !v)}
+                    className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
+                      friendlyReading
+                        ? 'bg-sky-600 border-sky-600 text-white'
+                        : 'bg-sky-50 border-sky-200 text-sky-800 hover:bg-sky-100'
+                    }`}
+                    title="Agrupa la guía en sílabas con colores suaves y fondo crema"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    {friendlyReading ? 'Lectura amigable: On' : 'Lectura amigable'}
+                  </button>
                 </div>
               </div>
 
@@ -1189,17 +1206,17 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
 
                 {easyReadMode && segment.phoneticEs ? (
                   <>
-                    <div className="rounded-xl bg-indigo-50 border border-indigo-200 p-4 space-y-2">
-                      <div className="text-xs font-extrabold uppercase tracking-wider text-indigo-700">
-                        Léelo corrido, sin pausar entre sílabas:
+                    <div className={`rounded-xl border p-4 space-y-2 ${friendlyReading ? 'bg-[#fdf6e3] border-amber-200' : 'bg-indigo-50 border-indigo-200'}`}>
+                      <div className={`text-xs font-extrabold uppercase tracking-wider ${friendlyReading ? 'text-amber-800' : 'text-indigo-700'}`}>
+                        {friendlyReading ? 'Léelo por sílabas:' : 'Léelo corrido, sin pausar entre sílabas:'}
                       </div>
-                      <p className="text-2xl sm:text-3xl font-extrabold text-indigo-950 leading-relaxed">
+                      <p className={`text-2xl sm:text-3xl font-extrabold text-indigo-950 ${friendlyReading ? 'leading-loose tracking-wide' : 'leading-relaxed'}`}>
                         {showSpeakerLabels && segment.speaker && (
                           <span className="mr-2 rounded-lg bg-indigo-600 text-white px-2 py-0.5 align-middle text-base font-extrabold tracking-wide">
                             {segment.speakerPhoneticEs || speakerPhoneticEs(segment.speaker)}:
                           </span>
                         )}
-                        {segment.phoneticEs}
+                        {friendlyReading ? <SyllableChips text={segment.phoneticEs} /> : segment.phoneticEs}
                       </p>
                       {showSpanishHelp && segment.translationEs && (
                         <div className="text-xs sm:text-sm text-slate-700 pt-2 border-t border-indigo-200/80">
@@ -1267,19 +1284,19 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                     </p>
 
                     {showSpanishHelp && (segment.phoneticEs || segment.translationEs) && (
-                      <div className="space-y-1.5 rounded-xl bg-indigo-50/75 border border-indigo-100 p-3.5">
+                      <div className={`space-y-1.5 rounded-xl border p-3.5 ${friendlyReading ? 'bg-[#fdf6e3] border-amber-200' : 'bg-indigo-50/75 border-indigo-100'}`}>
                         {segment.phoneticEs && (
                           <div>
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700">
-                              Léelo corrido así:{' '}
+                            <span className={`text-[11px] font-bold uppercase tracking-wider ${friendlyReading ? 'text-amber-800' : 'text-indigo-700'}`}>
+                              {friendlyReading ? 'Léelo por sílabas:' : 'Léelo corrido así:'}
                             </span>
-                            <p className="text-lg sm:text-xl font-bold text-indigo-950 leading-relaxed mt-0.5">
+                            <p className={`text-lg sm:text-xl font-bold text-indigo-950 mt-0.5 ${friendlyReading ? 'leading-loose tracking-wide' : 'leading-relaxed'}`}>
                               {showSpeakerLabels && segment.speaker && (
                                 <span className="mr-2 rounded-lg bg-indigo-600 text-white px-2 py-0.5 align-middle text-sm font-extrabold tracking-wide">
                                   {segment.speakerPhoneticEs || speakerPhoneticEs(segment.speaker)}:
                                 </span>
                               )}
-                              {segment.phoneticEs}
+                              {friendlyReading ? <SyllableChips text={segment.phoneticEs} /> : segment.phoneticEs}
                             </p>
                           </div>
                         )}
@@ -1329,6 +1346,15 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                     >
                       <Repeat className="w-3.5 h-3.5" />
                       {isLooping ? 'Repitiendo...' : 'Repetir'}
+                    </button>
+
+                    <button
+                      onClick={() => setShowMicTest(true)}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                      title="Probar el micrófono y ver el nivel de entrada"
+                    >
+                      <Mic className="w-3.5 h-3.5" />
+                      Probar micrófono
                     </button>
 
                     <button
@@ -1881,6 +1907,8 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
           }}
         />
       )}
+
+      <MicTestModal open={showMicTest} onClose={() => setShowMicTest(false)} />
 
       {confirmOptions && (
         <ConfirmDialog
