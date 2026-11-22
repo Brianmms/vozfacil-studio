@@ -21,7 +21,13 @@ import {
 } from '../lib/api';
 import { cleanExpectedText } from '../lib/scriptParser';
 import { PcmAudioRecorder } from '../lib/audioRecorder';
-import { analyzeAudioQuality, convertToAsrWavChunks, decodeAudioBlob, formatTime } from '../lib/audioUtils';
+import {
+  analyzeAudioQuality,
+  analyzeFluency,
+  convertToAsrWavChunks,
+  decodeAudioBlob,
+  formatTime,
+} from '../lib/audioUtils';
 import { speakEnglishText, stopAllSpeech } from '../lib/ttsPlayer';
 import { compareEvaluations, normalizeCompareText } from '../lib/progressCompare';
 import { EvaluationCard } from './EvaluationCard';
@@ -232,7 +238,17 @@ export const EvaluatorView: React.FC<EvaluatorViewProps> = ({
         saveHistory: true,
       });
       const audioQuality = audioBlob ? await analyzeAudioQuality(audioBlob) : undefined;
-      setResult({ ...evaluation, audioQuality });
+      const fluency = audioBlob
+        ? await analyzeFluency(audioBlob, cleanExpectedText(text))
+        : undefined;
+      setResult({
+        ...evaluation,
+        audioQuality,
+        fluency,
+        score: fluency
+          ? Math.max(0, evaluation.score - fluency.penalty)
+          : evaluation.score,
+      });
       const updatedHistory = await fetchEvaluations();
       setHistory(updatedHistory);
     } catch (err) {

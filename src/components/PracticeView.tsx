@@ -41,6 +41,7 @@ import {
 import { PcmAudioRecorder } from '../lib/audioRecorder';
 import {
   analyzeAudioQuality,
+  analyzeFluency,
   convertBlobToCleanWav,
   convertToAsrWavChunks,
   ensureAudioContextRunning,
@@ -566,7 +567,13 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
         saveHistory: false,
       });
       const audioQuality = blob ? await analyzeAudioQuality(blob) : undefined;
-      const evaluated = { ...result, audioQuality };
+      const fluency = blob ? await analyzeFluency(blob, targetSeg.text) : undefined;
+      const evaluated = {
+        ...result,
+        audioQuality,
+        fluency,
+        score: fluency ? Math.max(0, result.score - fluency.penalty) : result.score,
+      };
 
       const updatedSegments = baseProject.segments.map((s) => {
         if (s.id !== targetSeg.id) return s;

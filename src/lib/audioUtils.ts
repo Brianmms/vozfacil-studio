@@ -1,4 +1,4 @@
-import type { AudioCutRange, AudioQuality } from '../types';
+import type { AudioCutRange, AudioQuality, FluencyAnalysis } from '../types';
 import { loadAudioBlobFromUrl } from './localStore';
 
 let sharedCtx: AudioContext | null = null;
@@ -686,6 +686,139 @@ export function detectInternalSilences(
     trimEnd,
     cuts: mergeCutRanges(rawCuts, trimStart, trimEnd),
   };
+}
+
+export async function analyzeFluency(
+  blob: Blob,
+  expectedText: string
+): Promise<FluencyAnalysis> {
+  try {
+    const buffer = await decodeAudioBlob(blob);
+    const mono = mixToMono(buffer);
+    const sr = buffer.sampleRate;
+    const frameSec = 0.02;
+    const frameSize = Math.max(1, Math.round(sr * frameSec));
+    const frames: number[] = [];
+
+    for (let start = 0; start < mono.length; start += frameSize) {
+      const end = Math.min(mono.length, start + frameSize);
+      let sumSq = 0;
+      for (let i = start; i < end; i++) sumSq += mono[i] * mono[i];
+      frames.push(Math.sqrt(sumSq / Math.max(1, end - start)));
+    }
+
+    if (frames.length === 0) {
+      return {
+        level: 'natural',
+        pauseCount: 0,
+        pauseRatio: 0,
+        wordsPerSecond: 0,
+        penalty: 0,
+        message: 'No se pudo analizar la fluidez.',
+      };
+    }
+
+    const sorted = [...frames].sort((a, b) => a - b);
+    const pct = (p: number) => {
+      if (sorted.length === 0) return 0;
+      const index = Math.min(
+        sorted.length - 1,
+        Math.max(0, Math.round(p * (sorted.length - 1)))
+      );
+      return sorted[index];
+    };
+    const noise = pct(0.1);
+    const speech = pct(0.9);
+    const threshold = noise + Math.max(0.0015, (speech - noise) * 0.2);
+
+    let firstActive = -1;
+    let lastActive = -1;
+    for (let i = 0; i < frames.length; i++) {
+      if (frames[i] >= threshold) {
+        if (firstActive === -1) firstActive = i;
+        lastActive = i;
+      }
+    }
+
+    if (firstActive === -1 || lastActive <= firstActive) {
+      return {
+        level: 'slow',
+        pauseCount: 0,
+        pauseRatio: 1,
+        wordsPerSecond: 0,
+        penalty: 20,
+        message:
+          'No se escucha voz clara. Acércate al micrófono y habla con naturalidad.',
+      };
+    }
+
+    const minPauseFrames = Math.max(2, Math.round(0.22 / frameSec));
+    let pauseCount = 0;
+    let pauseFrames = 0;
+    let run = 0;
+    for (let i = firstActive; i <= lastActive; i++) {
+      if (frames[i] < threshold) {
+        run += 1;
+      } else {
+        if (run >= minPauseFrames) {
+          pauseCount += 1;
+          pauseFrames += run;
+        }
+        run = 0;
+      }
+    }
+    if (run >= minPauseFrames) {
+      pauseCount += 1;
+      pauseFrames += run;
+    }
+
+    const activeSec = Math.max(0.01, (lastActive - firstActive + 1) * frameSec);
+    const pauseSec = pauseFrames * frameSec;
+    const pauseRatio = Math.min(1, pauseSec / activeSec);
+    const speechSec = Math.max(0.3, activeSec - pauseSec);
+    const wordCount =
+      String(expectedText || '').trim().split(/\s+/).filter(Boolean).length || 1;
+    const wordsPerSecond = wordCount / speechSec;
+
+    const tooManyPauses =
+      pauseCount >= Math.max(3, Math.round(wordCount * 0.45));
+    const tooMuchSilence = pauseRatio >= 0.3;
+    const tooSlow = wordsPerSecond < 1.15;
+
+    if (tooManyPauses && (tooMuchSilence || tooSlow)) {
+      const penalty = Math.min(
+        35,
+        15 + pauseCount * 2 + Math.round(pauseRatio * 15)
+      );
+      return {
+        level: tooSlow ? 'slow' : 'choppy',
+        pauseCount,
+        pauseRatio: Number(pauseRatio.toFixed(2)),
+        wordsPerSecond: Number(wordsPerSecond.toFixed(2)),
+        penalty,
+        message:
+          'Parece que estás leyendo palabra por palabra (como dictado). Intenta unir las palabras y frasear la oración como en una conversación, sin pausar entre cada palabra.',
+      };
+    }
+
+    return {
+      level: 'natural',
+      pauseCount,
+      pauseRatio: Number(pauseRatio.toFixed(2)),
+      wordsPerSecond: Number(wordsPerSecond.toFixed(2)),
+      penalty: 0,
+      message: 'Ritmo natural.',
+    };
+  } catch {
+    return {
+      level: 'natural',
+      pauseCount: 0,
+      pauseRatio: 0,
+      wordsPerSecond: 0,
+      penalty: 0,
+      message: 'No se pudo analizar la fluidez.',
+    };
+  }
 }
 
 export function formatTime(seconds: number): string {

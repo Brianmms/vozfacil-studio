@@ -21,6 +21,15 @@ export interface WordFeedbackItem {
   tipEs: string;
 }
 
+export interface FluencyAnalysis {
+  level: 'natural' | 'choppy' | 'slow';
+  pauseCount: number;
+  pauseRatio: number;
+  wordsPerSecond: number;
+  penalty: number;
+  message: string;
+}
+
 export interface AudioQuality {
   level: 'good' | 'low' | 'clipping' | 'noisy';
   rmsDb: number;
@@ -45,6 +54,7 @@ export interface EvaluationResult {
   wordFeedback: WordFeedbackItem[];
   nextStepTip: string;
   audioQuality?: AudioQuality;
+  fluency?: FluencyAnalysis;
 }
 
 export interface Take {

@@ -71,6 +71,16 @@ export const EvaluationCard: React.FC<EvaluationCardProps> = ({
         </div>
       )}
 
+      {result.fluency && result.fluency.level !== 'natural' && (
+        <div className="px-4 sm:px-5 py-3 border-b bg-amber-50/90 border-amber-200 text-amber-950 flex items-start gap-2 text-xs sm:text-sm font-semibold">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>
+            {result.fluency.message}
+            {result.fluency.penalty > 0 ? ` (−${result.fluency.penalty} pts)` : ''}
+          </span>
+        </div>
+      )}
+
       {/* Progress comparison banner */}
       {comparison && (
         <div

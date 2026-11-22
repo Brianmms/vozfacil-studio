@@ -39,6 +39,7 @@ import { PcmAudioRecorder } from '../lib/audioRecorder';
 import { encodeAudioBufferToMp3, renderStitchedAudio } from '../lib/audioStitcher';
 import {
   analyzeAudioQuality,
+  analyzeFluency,
   convertBlobToCleanWav,
   convertToAsrWavChunks,
   detectInternalSilences,
@@ -840,7 +841,13 @@ export const StudioView: React.FC<StudioViewProps> = ({
         saveHistory: true,
       });
       const audioQuality = await analyzeAudioQuality(rendered.wavBlob);
-      setMasterEvaluation({ ...res, audioQuality });
+      const fluency = await analyzeFluency(rendered.wavBlob, expectedText);
+      setMasterEvaluation({
+        ...res,
+        audioQuality,
+        fluency,
+        score: Math.max(0, res.score - fluency.penalty),
+      });
     } catch (err) {
       setStudioError(
         err instanceof Error ? err.message : 'No se pudo evaluar el audio unido.'
