@@ -57,7 +57,7 @@ import {
 import { compareEvaluations, type EvaluationComparison } from '../lib/progressCompare';
 import { loadAudioBlobFromUrl } from '../lib/localStore';
 import { speakerLabelEn, speakerPhoneticEs } from '../lib/scriptParser';
-import { numberGuide } from '../lib/numbers';
+import { numberGuide, replaceNumbersInPhonetic } from '../lib/numbers';
 import { EvaluationCard } from './EvaluationCard';
 import { NewScriptModal } from './NewScriptModal';
 import { ConfirmDialog, type ConfirmDialogOptions } from './ConfirmDialog';
@@ -1233,7 +1233,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                             {segment.speakerPhoneticEs || speakerPhoneticEs(segment.speaker)}:
                           </span>
                         )}
-                        {friendlyReading ? <FriendlyGuideText text={segment.phoneticEs} /> : segment.phoneticEs}
+                        {friendlyReading ? <FriendlyGuideText text={replaceNumbersInPhonetic(segment.phoneticEs)} /> : replaceNumbersInPhonetic(segment.phoneticEs)}
                       </p>
                       {showSpanishHelp && segment.translationEs && (
                         <div className="text-xs sm:text-sm text-slate-700 pt-2 border-t border-indigo-200/80">
@@ -1313,7 +1313,7 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
                                   {segment.speakerPhoneticEs || speakerPhoneticEs(segment.speaker)}:
                                 </span>
                               )}
-                              {friendlyReading ? <FriendlyGuideText text={segment.phoneticEs} /> : segment.phoneticEs}
+                              {friendlyReading ? <FriendlyGuideText text={replaceNumbersInPhonetic(segment.phoneticEs)} /> : replaceNumbersInPhonetic(segment.phoneticEs)}
                             </p>
                           </div>
                         )}
