@@ -143,6 +143,10 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
   } | null>(null);
   const [evaluatingTakeId, setEvaluatingTakeId] = useState<string | null>(null);
   const [reanalyzingTakeId, setReanalyzingTakeId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    tone: 'success' | 'warning';
+  } | null>(null);
   const [evalError, setEvalError] = useState<string | null>(null);
 
   // Modals / manual segment add
@@ -180,6 +184,12 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
       recorderRef.current?.cancel();
     };
   }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(null), 4500);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
 
   if (!activeProject) {
     return null;
@@ -751,6 +761,13 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
         ),
       }));
       await onUpdateProject({ ...activeProject, segments: updatedSegments });
+      setToast({
+        message:
+          audioQuality.level === 'good'
+            ? 'Calidad de audio: buen nivel.'
+            : audioQuality.message,
+        tone: audioQuality.level === 'good' ? 'success' : 'warning',
+      });
     } catch (err) {
       setEvalError(
         err instanceof Error ? err.message : 'No se pudo re-analizar el audio.'
@@ -1872,6 +1889,19 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
           onConfirm={() => resolveConfirm(true)}
           onCancel={() => resolveConfirm(false)}
         />
+      )}
+
+      {toast && (
+        <div
+          className={`fixed bottom-5 left-1/2 -translate-x-1/2 z-[70] rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg border ${
+            toast.tone === 'success'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+              : 'bg-amber-50 border-amber-200 text-amber-900'
+          }`}
+          role="status"
+        >
+          {toast.message}
+        </div>
       )}
     </div>
   );

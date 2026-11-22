@@ -71,6 +71,13 @@ export const EvaluationCard: React.FC<EvaluationCardProps> = ({
         </div>
       )}
 
+      {result.audioQuality && result.audioQuality.level === 'good' && (
+        <div className="px-4 sm:px-5 py-2 border-b bg-emerald-50/70 border-emerald-100 text-emerald-800 flex items-center gap-2 text-[11px] font-semibold">
+          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+          Calidad de audio: buen nivel
+        </div>
+      )}
+
       {result.fluency && result.fluency.level !== 'natural' && (
         <div className="px-4 sm:px-5 py-3 border-b bg-amber-50/90 border-amber-200 text-amber-950 flex items-start gap-2 text-xs sm:text-sm font-semibold">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
