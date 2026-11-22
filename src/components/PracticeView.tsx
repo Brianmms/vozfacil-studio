@@ -63,6 +63,7 @@ import { NewScriptModal } from './NewScriptModal';
 import { ConfirmDialog, type ConfirmDialogOptions } from './ConfirmDialog';
 import { FriendlyGuideText } from './FriendlyGuideText';
 import { MicTestModal } from './MicTestModal';
+import { CelebrationOverlay } from './CelebrationOverlay';
 import { WaveformCanvas } from './WaveformCanvas';
 import { WordPopover } from './WordPopover';
 
@@ -156,6 +157,8 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
   // Modals / manual segment add
   const [showNewModal, setShowNewModal] = useState(false);
   const [showMicTest, setShowMicTest] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationMessage, setCelebrationMessage] = useState('¡Muy bien!');
   const [confirmOptions, setConfirmOptions] = useState<ConfirmDialogOptions | null>(null);
   const confirmResolverRef = useRef<((ok: boolean) => void) | null>(null);
   const [addingManualPart, setAddingManualPart] = useState(false);
@@ -605,6 +608,10 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
         fluency,
         score: fluency ? Math.max(0, result.score - fluency.penalty) : result.score,
       };
+      if (evaluated.score >= 90) {
+        setCelebrationMessage(evaluated.score >= 100 ? '¡PERFECTO! 🏆' : '¡Muy bien! 🎉');
+        setShowCelebration(true);
+      }
 
       const updatedSegments = baseProject.segments.map((s) => {
         if (s.id !== targetSeg.id) return s;
@@ -1926,6 +1933,12 @@ export const PracticeView: React.FC<PracticeViewProps> = ({
       )}
 
       <MicTestModal open={showMicTest} onClose={() => setShowMicTest(false)} />
+
+      <CelebrationOverlay
+        show={showCelebration}
+        message={celebrationMessage}
+        onDone={() => setShowCelebration(false)}
+      />
 
       {confirmOptions && (
         <ConfirmDialog
